@@ -1,4 +1,4 @@
-# BBC Learning English Aggregator
+# BBCast (BBC Learning English Aggregator)
 
 BBC Learning Englishのコンテンツを活用し、英語学習を効率化するためのモバイルアプリケーションプロジェクトです。
 本リポジトリは、開発者の技術ポートフォリオとして公開されています。
