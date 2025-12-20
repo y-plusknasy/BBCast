@@ -1,0 +1,82 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production
+build/
+dist/
+
+# Misc
+.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Expo
+.expo/
+web-build/
+
+# Android
+android/
+# If you are not using Expo Prebuild (bare workflow), you might want to un-ignore android/ and ios/
+# But for Expo Managed workflow, they are generated.
+# Assuming Managed workflow or Prebuild:
+# android/
+# ios/
+
+# iOS
+ios/
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.perspectivev3
+*.scc
+!default.pbxuser
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Editor directories and files
+.idea
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Application Data (Local Development)
+# Prevent committing downloaded audio/scripts if stored locally during dev
+data/audio/
+data/scripts/
+data/images/
+*.mp3
+*.mp4
+*.wav
