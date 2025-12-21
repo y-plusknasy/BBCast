@@ -103,3 +103,40 @@ Firestore (Native mode) を使用し、以下のコレクション構造でデ�
 | `uid` (Document ID) | string | ユーザーID |
 | `bookmarks` | array | ブックマークしたエピソードID |
 | `history` | sub-collection | 再生履歴 |
+
+## 4. バックエンド実装構造 (Backend Structure)
+
+本プロジェクトはモノレポ構成を採用しており、バックエンド機能は `backend/` ディレクトリに集約されています。
+
+### 4.1. ディレクトリ構成
+
+```text
+backend/
+├── src/
+│   ├── scraper/
+│   │   ├── BaseScraper.ts          # スクレイピングの基底クラス (HTTP, Cheerio)
+│   │   ├── IndexPageScraper.ts     # 番組一覧ページの解析ロジック
+│   │   ├── SixMinuteEnglishScraper.ts # "6 Minute English" 特化の解析ロジック
+│   │   └── types.ts                # データ型定義 (EpisodeDetail, ScriptLine 等)
+│   ├── config.ts                   # 環境変数・定数設定
+│   └── run-scraper.ts              # スクレイピング実行エントリポイント (CLI/Cloud Functions)
+├── package.json
+└── tsconfig.json
+```
+
+### 4.2. スクレイピングアーキテクチャ
+
+スクレイピング処理は、再利用性と保守性を高めるために3層構造で設計されています。
+
+1.  **BaseScraper**:
+    *   共通のHTTPリクエスト処理、HTMLパース (Cheerio)、エラーハンドリングを担当します。
+    *   User-Agentの設定やタイムアウト処理を統一的に管理します。
+
+2.  **IndexPageScraper**:
+    *   番組のトップページ（インデックス）からエピソードのリストを抽出する汎用的なロジックを持ちます。
+    *   設定ファイルや引数でセレクタを指定することで、異なる番組構造にも対応可能です。
+
+3.  **ProgramSpecificScraper (e.g., SixMinuteEnglishScraper)**:
+    *   特定の番組に固有のページ構造（スクリプトのDOM構造、語彙リストのフォーマットなど）を解析します。
+    *   `IndexPageScraper` を継承または利用し、詳細ページの解析ロジックをオーバーライドして実装します。
+

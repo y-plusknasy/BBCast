@@ -11,13 +11,13 @@ BBC Learning Englishのコンテンツを活用し、英語学習を効率化す
 
 ## 📂 リポジトリ構成 (Repository Structure)
 
-本リポジトリは、機密情報や著作権物を排除しつつ、アプリケーションのビルドとデプロイが可能な構成になっています。
+本リポジトリは、フロントエンドとバックエンドを単一のリポジトリで管理するモノレポ構成を採用しています。
 
 ```
 .
 ├── doc/                # 設計ドキュメント
-├── app/                # React Native (Expo) アプリケーションコード
-├── functions/          # Cloud Functions (Backend) コード
+├── frontend/           # [Mobile App] React Native (Expo) アプリケーションコード
+├── backend/            # [Backend] Cloud Functions (Scraper & API) コード
 ├── firebase.json       # Firebase構成ファイル
 ├── .gitignore          # 除外設定
 └── README.md           # 本ファイル

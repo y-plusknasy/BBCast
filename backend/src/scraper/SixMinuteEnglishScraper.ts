@@ -1,0 +1,192 @@
+import { IndexPageScraper, IndexPageConfig } from './IndexPageScraper';
+import { EpisodeDetail, VocabularyItem, ScriptLine } from './types';
+import { CheerioAPI } from 'cheerio';
+import { config as appConfig } from '../config';
+
+export class SixMinuteEnglishScraper extends IndexPageScraper {
+  private static readonly DEFAULT_CONFIG: IndexPageConfig = {
+    // 最新のエピソード(Featured)と過去のエピソード(List)の両方を対象にする
+    listSelector: '.widget-bbcle-coursecontentlist-featured, .widget-progress-enabled li',
+    urlSelector: 'a',
+    titleSelector: 'h2',
+    dateSelector: '.details h3',
+    descriptionSelector: 'p'
+  };
+
+  constructor() {
+    // BBCのドメインをBaseURLとして設定
+    super(appConfig.bbc.baseUrl, SixMinuteEnglishScraper.DEFAULT_CONFIG);
+  }
+
+  /**
+   * エピソード詳細ページをスクレイピングする
+   * @param url エピソード詳細ページのURL
+   */
+  public async scrapeEpisode(url: string): Promise<EpisodeDetail> {
+    const $ = await this.fetchAndParse(url);
+    
+    // タイトル取得（h1がページタイトルになっていることが多い）
+    const title = this.cleanText($('h1').text());
+    
+    // 公開日などのメタデータ取得（必要に応じて実装）
+    const date = this.cleanText($('.details h3').first().text());
+
+    const mp3Url = this.extractMp3Url($);
+    const quizUrl = this.extractQuizUrl($);
+    const vocabulary = this.extractVocabulary($);
+    const script = this.extractScript($);
+
+    return {
+      title,
+      date,
+      url,
+      mp3Url,
+      quizUrl,
+      vocabulary,
+      script
+    };
+  }
+
+  /**
+   * MP3のダウンロードURLを抽出
+   */
+  private extractMp3Url($: CheerioAPI): string | undefined {
+    // .mp3 で終わるリンクを探す
+    return $('a[href$=".mp3"]').attr('href');
+  }
+
+  /**
+   * クイズページへのリンクを抽出
+   */
+  private extractQuizUrl($: CheerioAPI): string | undefined {
+    // "Try our free interactive quiz" などの文言を含むリンクを探す
+    // 優先度1: h3の中にあるリンク
+    let quizUrl = $('h3:contains("Try our") a').attr('href');
+    
+    // 優先度2: テキストに "interactive quiz" を含むリンク
+    if (!quizUrl) {
+      quizUrl = $('a:contains("interactive quiz")').attr('href');
+    }
+
+    // 相対パスの場合は絶対パスに変換
+    if (quizUrl && quizUrl.startsWith('/')) {
+      quizUrl = `${appConfig.bbc.baseUrl}${quizUrl}`;
+    }
+
+    return quizUrl;
+  }
+
+  /**
+   * 語彙リストを抽出
+   */
+  private extractVocabulary($: CheerioAPI): VocabularyItem[] {
+    const vocabItems: VocabularyItem[] = [];
+    const vocabHeader = $('h3:contains("Vocabulary")');
+
+    if (vocabHeader.length > 0) {
+      // Vocabularyヘッダーの直後のpタグを取得
+      const vocabContainer = vocabHeader.next('p');
+      const htmlContent = vocabContainer.html() || '';
+
+      // <br>タグで分割して解析
+      // 例: <strong>Word</strong><br>Definition<br>&nbsp;<br><strong>Word2</strong>...
+      const parts = htmlContent.split('<br>').map(s => s.trim()).filter(s => s !== '' && s !== '&nbsp;');
+
+      let currentWord = '';
+      
+      parts.forEach(part => {
+        // HTMLタグを除去したテキスト
+        const text = part.replace(/<[^>]*>/g, '').trim();
+        
+        // <strong>タグを含んでいた場合は「単語」とみなす
+        if (part.includes('<strong>') || part.includes('<b>')) {
+          currentWord = text;
+        } else if (currentWord && text) {
+          // 単語がセットされた状態で、次のテキストが来たら「定義」とみなす
+          vocabItems.push({
+            word: currentWord,
+            definition: text
+          });
+          currentWord = ''; // リセット
+        }
+      });
+    }
+
+    return vocabItems;
+  }
+
+  /**
+   * スクリプト本文を抽出
+   */
+  private extractScript($: CheerioAPI): ScriptLine[] {
+    const scriptLines: ScriptLine[] = [];
+
+    // "TRANSCRIPT" という文字を含むラベルを探す
+    const transcriptLabel = $('strong:contains("TRANSCRIPT"), b:contains("TRANSCRIPT")');
+    
+    if (transcriptLabel.length === 0) {
+      return [];
+    }
+
+    // ラベルを含む親のpタグを見つける
+    let currentElement = transcriptLabel.closest('p');
+    
+    // 次の要素へ移動（ここから本文開始）
+    currentElement = currentElement.next();
+    
+    // "Note: This is not a word-for-word..." という注釈があればスキップ
+    if (currentElement.text().includes('Note:')) {
+      currentElement = currentElement.next();
+    }
+
+    // 次のセクション（h3など）が来るまで要素を取得し続ける
+    while (currentElement.length > 0) {
+      // h3タグなどが来たら終了（Vocabularyセクションなどの開始）
+      if (currentElement.is('h3')) {
+        break;
+      }
+
+      // pタグなら中身を詳細に解析
+      if (currentElement.is('p')) {
+        const contents = currentElement.contents();
+        let currentSpeaker = '';
+        let currentText = '';
+
+        contents.each((_, node) => {
+          const el = $(node);
+
+          // strong/bタグは話者名とみなす
+          if (node.type === 'tag' && (node.name === 'strong' || node.name === 'b')) {
+            // 前の話者のセリフがあれば保存
+            if (currentSpeaker || currentText.trim()) {
+              scriptLines.push({
+                speaker: currentSpeaker,
+                text: this.cleanText(currentText)
+              });
+            }
+            // 新しい話者をセット
+            currentSpeaker = this.cleanText(el.text());
+            currentText = ''; // テキストリセット
+          } 
+          // テキストノードまたはその他のタグ（span, iなど）はセリフの一部
+          else if (node.type === 'text' || (node.type === 'tag' && node.name !== 'br')) {
+            currentText += el.text() + ' ';
+          }
+          // brタグは無視（スペース扱い済み）
+        });
+
+        // 最後の話者のセリフを保存
+        if (currentSpeaker || currentText.trim()) {
+          scriptLines.push({
+            speaker: currentSpeaker,
+            text: this.cleanText(currentText)
+          });
+        }
+      }
+
+      currentElement = currentElement.next();
+    }
+
+    return scriptLines;
+  }
+}
