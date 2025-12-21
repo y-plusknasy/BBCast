@@ -48,6 +48,12 @@ ios/
 !default.perspectivev3
 
 # Firebase
+
+# Local scraper scripts and results
+backend/result.json
+backend/src/test-scraper.ts
+backend/src/run-scraper.ts
+
 .firebase/
 firebase-debug.log
 firestore-debug.log
