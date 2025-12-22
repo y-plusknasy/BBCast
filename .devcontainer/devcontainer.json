@@ -11,7 +11,7 @@
       "installMaven": false
     }
   },
-  "postCreateCommand": "npm install -g firebase-tools",
+  "postCreateCommand": "npm install -g firebase-tools && cd backend && npm install",
   "customizations": {
     "vscode": {
       "extensions": [
