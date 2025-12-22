@@ -4,8 +4,14 @@
     "dockerfile": "Dockerfile"
   },
   "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "17",
+      "installGradle": false,
+      "installMaven": false
+    }
   },
+  "postCreateCommand": "npm install -g firebase-tools",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -15,7 +21,8 @@
         "yzhang.markdown-all-in-one",
         "bierner.markdown-mermaid",
         "GitHub.copilot",
-        "GitHub.copilot-chat"
+        "GitHub.copilot-chat",
+        "tobeocom.firebase"
       ]
     }
   }
