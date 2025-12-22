@@ -1,9 +1,12 @@
 import { IndexPageScraper, IndexPageConfig } from './IndexPageScraper';
 import { EpisodeDetail, VocabularyItem, ScriptLine } from './types';
+import { SixMinuteEnglishQuizScraper } from './SixMinuteEnglishQuizScraper';
 import { CheerioAPI } from 'cheerio';
 import { config as appConfig } from '../config';
 
 export class SixMinuteEnglishScraper extends IndexPageScraper {
+  private quizScraper: SixMinuteEnglishQuizScraper;
+
   private static readonly DEFAULT_CONFIG: IndexPageConfig = {
     // 最新のエピソード(Featured)と過去のエピソード(List)の両方を対象にする
     listSelector: '.widget-bbcle-coursecontentlist-featured, .widget-progress-enabled li',
@@ -16,6 +19,7 @@ export class SixMinuteEnglishScraper extends IndexPageScraper {
   constructor() {
     // BBCのドメインをBaseURLとして設定
     super(appConfig.bbc.baseUrl, SixMinuteEnglishScraper.DEFAULT_CONFIG);
+    this.quizScraper = new SixMinuteEnglishQuizScraper();
   }
 
   /**
@@ -36,12 +40,19 @@ export class SixMinuteEnglishScraper extends IndexPageScraper {
     const vocabulary = this.extractVocabulary($);
     const script = this.extractScript($);
 
+    let quizContent;
+    if (quizUrl) {
+      console.log(`Fetching quiz content from: ${quizUrl}`);
+      quizContent = await this.quizScraper.scrapeQuiz(quizUrl);
+    }
+
     return {
       title,
       date,
       url,
       mp3Url,
       quizUrl,
+      quizContent,
       vocabulary,
       script
     };

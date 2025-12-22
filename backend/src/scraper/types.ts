@@ -8,6 +8,17 @@ export interface ScriptLine {
   text: string;
 }
 
+export interface QuizOption {
+  label: string;
+  isCorrect: boolean;
+}
+
+export interface QuizQuestion {
+  question: string;
+  options: QuizOption[];
+  answerIndex: number;
+}
+
 export interface EpisodeDetail {
   title: string;
   description?: string;
@@ -17,4 +28,5 @@ export interface EpisodeDetail {
   script: ScriptLine[];
   vocabulary: VocabularyItem[];
   quizUrl?: string;
+  quizContent?: QuizQuestion[];
 }
