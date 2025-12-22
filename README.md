@@ -7,7 +7,6 @@ BBC Learning Englishのコンテンツを活用し、英語学習を効率化す
 *   本アプリは**非公開・個人利用**を前提としています。
 *   BBC (British Broadcasting Corporation) の公式アプリではありません。
 *   著作権保護のため、本リポジトリには音声ファイルやスクリプトなどのコンテンツデータは含まれていません。
-*   本コードを使用して発生したいかなる問題についても、開発者は責任を負いません。
 
 ## 📂 リポジトリ構成 (Repository Structure)
 
@@ -18,46 +17,46 @@ BBC Learning Englishのコンテンツを活用し、英語学習を効率化す
 ├── doc/                # 設計ドキュメント
 ├── frontend/           # [Mobile App] React Native (Expo) アプリケーションコード
 ├── backend/            # [Backend] Cloud Functions (Scraper & API) コード
-├── firebase.json       # Firebase構成ファイル
-├── .gitignore          # 除外設定
-└── README.md           # 本ファイル
+├── .devcontainer/      # [Dev Env] VS Code Dev Container 設定
+└── firebase.json       # Firebase 設定ファイル
 ```
 
-## 🔐 環境設定とセキュリティ (Configuration & Security)
+## 🚀 開発環境のセットアップ (Getting Started)
 
-本プロジェクトでは、APIキーや認証情報などの機密情報を環境変数 (`.env`) で管理しています。
-リポジトリをクローンして動作させる場合は、以下の手順で環境変数を設定する必要があります。
+### 前提条件 (Prerequisites)
+*   Docker Desktop (または互換コンテナランタイム)
+*   VS Code + Dev Containers 拡張機能
 
-### 1. 環境変数の準備
-ルートディレクトリに `.env` ファイルを作成し、以下の変数を設定してください。
+### セットアップ手順
+1.  VS Codeで本フォルダを開きます。
+2.  "Reopen in Container" を選択して、Dev Containerを起動します。
+3.  自動的に `backend` と `frontend` の依存関係がインストールされます。
 
+### 開発コマンド
+
+#### バックエンド (Firebase Emulators)
+ローカルでFirestoreとAuthのエミュレータを起動します。
 ```bash
-# Firebase Client Config (for App)
-EXPO_PUBLIC_FIREBASE_API_KEY=your_api_key
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-# ... other firebase config
-
-# Backend Config (for Cloud Functions)
-BBC_BASE_URL=https://www.bbc.co.uk/learningenglish
+firebase emulators:start
 ```
+*   Emulator UI: http://localhost:4000
+*   Firestore: http://localhost:8080
+*   Auth: http://localhost:9099
 
-### 2. Firebase Setup
-本アプリはバックエンドにFirebase (Firestore, Functions, Auth) を使用しています。
-自身のFirebaseプロジェクトを作成し、`firebase-tools` を使用してデプロイ環境を構築してください。
+#### フロントエンド (Expo)
+```bash
+cd frontend
+npm start
+```
+*   Expo GoアプリでQRコードをスキャンするか、`w` キーでWeb版を起動して確認します。
 
-## 🚀 配布・インストール (Distribution)
-
-本アプリは一般公開されていません。
-開発者から提供されたパッケージ (APK/TestFlight) を使用するか、自身でビルドを行ってください。
-
-### 認証について
-アプリの利用にはログインが必要です。
-ポートフォリオ閲覧用のアカウント情報については、開発者までお問い合わせください。
+## 📚 ドキュメント (Documentation)
+*   [システム設計書 (System Design)](doc/system-design-draft.md)
+*   [アーキテクチャ (Architecture)](doc/architecture.md)
+*   [データベーススキーマ (Database Schema)](doc/database/schema.md)
 
 ## 🛠 技術スタック (Tech Stack)
-
 *   **Frontend**: React Native (Expo), TypeScript
 *   **Backend**: Node.js, Google Cloud Functions
-*   **Database**: Firestore
-*   **Infrastructure**: Google Cloud Platform (GCP)
+*   **Database**: Firestore (Native mode)
+*   **Infrastructure**: Firebase (Auth, Emulators)

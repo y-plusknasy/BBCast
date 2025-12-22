@@ -2,20 +2,21 @@
 
 ## 1. システム構成図 (System Architecture)
 
-本システムは、Google Cloud Platform (GCP) を活用したサーバーレスアーキテクチャを採用しています。
+本システムは、Firebase (Google Cloud Platform) を活用したサーバーレスアーキテクチャを採用しています。
 
 ```mermaid
 graph TD
     subgraph Client [Mobile App (React Native)]
         App[App UI]
-        LocalDB[Local Storage / SQLite]
+        AuthSDK[Firebase Auth SDK]
+        FirestoreSDK[Firestore SDK]
     end
 
-    subgraph GCP [Google Cloud Platform]
-        Scheduler[Cloud Scheduler]
+    subgraph Firebase [Firebase / GCP]
+        Auth[Firebase Auth (Anonymous)]
         CF[Cloud Functions (Scraper)]
         Firestore[(Firestore)]
-        GCS[Cloud Storage (Optional Cache)]
+        Emulator[Firebase Emulators (Local Dev)]
     end
 
     subgraph External [External Source]
@@ -23,20 +24,17 @@ graph TD
     end
 
     %% Flows
-    Scheduler -- "Trigger (Cron)" --> CF
+    AuthSDK -- "Sign In Anonymously" --> Auth
     App -- "Trigger (Manual Sync)" --> CF
     CF -- "HTTP Request" --> BBC
     BBC -- "HTML / MP3" --> CF
     CF -- "Save Metadata & Text" --> Firestore
-    CF -- "Cache Audio (Temp)" --> GCS
     
-    App -- "Read Metadata" --> Firestore
-    App -- "Download Audio" --> GCS
-    App -- "Direct Audio Stream (Fallback)" --> BBC
+    FirestoreSDK -- "Read Metadata (Auth Required)" --> Firestore
     
-    %% Local Sync
-    Firestore -.-> App
-    App --> LocalDB
+    %% Local Dev
+    App -.-> Emulator
+    CF -.-> Emulator
 ```
 
 ## 2. データフロー (Data Flow)
@@ -44,9 +42,7 @@ graph TD
 ### 2.1. スクレイピングフロー (Backend)
 1.  **Trigger**: 
     *   `Cloud Scheduler` が定期的に（例: 毎日深夜）、またはアプリからのリクエストにより `Cloud Functions` を起動します。
-2.  **Fetch Config**:
-    *   Scraperは `Firestore` の `programs` コレクションから、スクレイピング対象の番組リストと設定（URL, セレクタ等）を取得します。
-3.  **Scrape & Parse**:
+2.  **Scrape & Parse**:
     *   BBCのWebサイトへアクセスし、最新エピソードのHTMLを取得・解析します。
     *   タイトル、スクリプト、語彙、音声URLを抽出します。
 4.  **Persist**:
