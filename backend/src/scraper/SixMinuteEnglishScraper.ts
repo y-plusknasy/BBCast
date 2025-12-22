@@ -148,15 +148,48 @@ export class SixMinuteEnglishScraper extends IndexPageScraper {
 
       // pタグなら中身を詳細に解析
       if (currentElement.is('p')) {
-        const contents = currentElement.contents();
+        const contents = currentElement.contents().toArray();
         let currentSpeaker = '';
         let currentText = '';
 
-        contents.each((_, node) => {
+        for (let i = 0; i < contents.length; i++) {
+          const node = contents[i];
           const el = $(node);
+          
+          let isSpeaker = false;
 
-          // strong/bタグは話者名とみなす
+          // strong/bタグかどうかチェック
           if (node.type === 'tag' && (node.name === 'strong' || node.name === 'b')) {
+            // 前の要素を確認（空白テキストはスキップ）
+            let prev = null;
+            for (let j = i - 1; j >= 0; j--) {
+              const p = contents[j];
+              if (p.type === 'text' && $(p).text().trim() === '') continue;
+              prev = p;
+              break;
+            }
+
+            // 次の要素を確認（空白テキストはスキップ）
+            let next = null;
+            for (let j = i + 1; j < contents.length; j++) {
+              const n = contents[j];
+              if (n.type === 'text' && $(n).text().trim() === '') continue;
+              next = n;
+              break;
+            }
+
+            const isPrevBr = prev && prev.type === 'tag' && prev.name === 'br';
+            const isNextBr = next && next.type === 'tag' && next.name === 'br';
+            const isAtStart = prev === null;
+
+            // 条件: 前後がBRタグ（または文頭 + BR）であること
+            // ユーザー要件: "<strong>要素の前後両方がinnerHTMLを挟むことなく<br>要素で囲まれている場合"
+            if ((isPrevBr || isAtStart) && isNextBr) {
+              isSpeaker = true;
+            }
+          }
+
+          if (isSpeaker) {
             // 前の話者のセリフがあれば保存
             if (currentSpeaker || currentText.trim()) {
               scriptLines.push({
@@ -168,12 +201,14 @@ export class SixMinuteEnglishScraper extends IndexPageScraper {
             currentSpeaker = this.cleanText(el.text());
             currentText = ''; // テキストリセット
           } 
-          // テキストノードまたはその他のタグ（span, iなど）はセリフの一部
-          else if (node.type === 'text' || (node.type === 'tag' && node.name !== 'br')) {
-            currentText += el.text() + ' ';
+          else {
+            // テキストノードまたはその他のタグ（span, iなど）はセリフの一部
+            // brタグは無視（スペース扱い済み）
+            if (node.type === 'text' || (node.type === 'tag' && node.name !== 'br')) {
+              currentText += el.text() + ' ';
+            }
           }
-          // brタグは無視（スペース扱い済み）
-        });
+        }
 
         // 最後の話者のセリフを保存
         if (currentSpeaker || currentText.trim()) {
