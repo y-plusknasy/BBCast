@@ -8,31 +8,40 @@ BBC Learning Englishのサイト構造に対応するため、スクレイピン
 ### Level 1: `BaseScraper` (基底クラス)
 *   **役割**: WebページへのアクセスとHTML解析の共通機能を提供します。
 *   **主な機能**:
-    *   `fetch(url)`: Axiosを使用したHTTPリクエスト（User-Agent設定、タイムアウト処理含む）。
-    *   `parse(html)`: Cheerioを使用したDOM解析オブジェクトの生成。
-    *   エラーハンドリング: ネットワークエラーやステータスコードのチェック。
+    *   `constructor(baseUrl)`: ベースURLを受け取り、Axiosインスタンスを初期化します（DIパターン）。
+    *   `fetchHtml(url)`: Axiosを使用したHTTPリクエスト（User-Agent設定、タイムアウト処理含む）。
+    *   `parseHtml(html)`: Cheerioを使用したDOM解析オブジェクトの生成。
 
 ### Level 2: `IndexPageScraper` (目次解析クラス)
 *   **継承**: `extends BaseScraper`
 *   **役割**: 番組のトップページ（目次）を解析し、エピソードのリストを抽出する共通ロジックを提供します。
 *   **主な機能**:
-    *   ページネーション対応（必要に応じて）。
-    *   リスト要素のループ処理と、各エピソードへのリンク抽出。
-    *   更新チェック: 既にDBに存在するエピソードかどうかの判定ロジック（のフック）。
+    *   `scrapeIndex(url)`: 目次ページからエピソード概要リスト (`EpisodeSummary[]`) を取得します。
+    *   `scrapeEpisode(url)`: **抽象メソッド**。詳細ページの解析ロジックはサブクラスで実装を強制します。
+    *   設定ベースの抽出: `IndexPageConfig` (セレクタ定義) を使用してリスト要素を解析します。
 
 ### Level 3: `ProgramSpecificScraper` (番組別実装クラス)
 *   **継承**: `extends IndexPageScraper`
 *   **役割**: 特定の番組（例: "6 Minute English"）に特化した解析ロジックを実装します。
 *   **主な機能**:
-    *   **詳細ページ解析**: エピソード詳細ページから、スクリプト、音声URL、語彙リストを抽出する具体的なセレクタ定義。
+    *   **詳細ページ解析 (`scrapeEpisode`)**: エピソード詳細ページから、スクリプト、音声URL、語彙リストを抽出する具体的な実装。
     *   **スクリプト構造化**: HTML内の `<p>` タグ構造（`<strong>Speaker</strong> Text`）を解析し、話者とセリフに分離された構造化データ (`ScriptLine[]`) に変換します。
     *   **語彙リスト抽出**: `<br>` タグで区切られたテキストブロックを解析し、単語と定義のペアを抽出します。
 
-## 3. データ取得フロー
-1.  **Index Phase**: `ProgramSpecificScraper` が目次ページにアクセスし、最新エピソード（Featured）と過去エピソード（List）の両方からURLリストを取得。
-2.  **Filter Phase**: 既に取得済みのエピソードを除外（実装予定）。
-3.  **Detail Phase**: 新規エピソードのURLに対して詳細ページ解析を実行し、コンテンツ（テキスト・音声URL）を抽出。
-4.  **Persist Phase**: 抽出結果をFirestoreに保存（実装予定）。
+## 3. アーキテクチャとデータフロー
+
+### 3.1. 構成要素
+*   **Config (`config.ts`)**: プログラムごとの設定（ID, URL, 使用するスクレイパークラス）を定義します。循環参照を避けるため、スクレイパークラスへの依存を持ちますが、スクレイパー側からは参照されません。
+*   **Repository (`repository.ts`)**: Firestoreへのデータアクセスを抽象化します。重複チェックやデータの保存処理を担当します。
+*   **Controller (`index.ts`)**: Cloud Functionsのエントリーポイント。定期実行や手動トリガーを受け、全体のフローを制御します。
+
+### 3.2. 実行フロー
+1.  **Trigger**: Cloud Scheduler (24時間毎) または HTTPリクエストによりプロセスが開始。
+2.  **Index Phase**: `config.ts` に定義された各プログラムについて、`IndexPageScraper` が目次ページから最新エピソード一覧を取得。
+3.  **Check Phase**: `Repository` を介してDB上の最新エピソードを取得し、Web上の最新エピソードと比較。
+    *   新しいエピソードがない場合はスキップ。
+4.  **Detail Phase**: 新規エピソードのURLに対して `scrapeEpisode` を実行し、詳細データ（テキスト・音声URL・クイズ等）を抽出。
+5.  **Persist Phase**: `Repository` を介して抽出結果をFirestoreの `episodes` コレクションに保存。同時に `programs` コレクションのメタデータも更新。
 
 ## 4. 特殊なHTML構造への対応 (Implementation Details)
 

@@ -6,23 +6,36 @@ The database is designed to be **read-heavy**, optimized for client-side queries
 
 ## Collections
 
-### `episodes`
-Stores all episodes from all programs (e.g., "6 Minute English").
-Documents are identified by a unique Episode ID derived from the source URL or date to ensure idempotency.
+### `programs`
+Stores metadata and configuration for each program series (e.g., "6 Minute English").
 
-**Document ID Format**: `[Episode ID]` (e.g., `251218`)
+**Document ID Format**: `[Program ID]` (e.g., `6-minute-english`)
 
 | Field | Type | Required | Description | Example |
 | :--- | :--- | :--- | :--- | :--- |
-| `id` | String | Yes | Unique identifier for the episode. Same as Document ID. | `"251218"` |
-| `programTitle` | String | Yes | The name of the program. Used for filtering. | `"6 Minute English"` |
+| `id` | String | Yes | Unique identifier for the program. | `"6-minute-english"` |
+| `title` | String | Yes | Display title of the program. | `"6 Minute English"` |
+| `urlPath` | String | Yes | Relative path to the program's index page. | `"/learningenglish/..."` |
+| `baseUrl` | String | Yes | Base URL of the source site. | `"https://www.bbc.co.uk"` |
+| `updatedAt` | Timestamp | Yes | Server timestamp of last update. | `ServerTimestamp` |
+
+### `episodes`
+Stores all episodes from all programs.
+Documents are identified by a unique ID combining the Program ID and the episode slug.
+
+**Document ID Format**: `[Program ID]-[Slug]` (e.g., `6-minute-english-ep-251218`)
+
+| Field | Type | Required | Description | Example |
+| :--- | :--- | :--- | :--- | :--- |
+| `programId` | String | Yes | Reference to the parent program ID. | `"6-minute-english"` |
 | `title` | String | Yes | The title of the episode. | `"Learning English"` |
-| `publishedAt` | Timestamp | Yes | The publication date of the episode. | `2025-12-18T00:00:00Z` |
-| `audioUrl` | String | Yes | Direct URL to the MP3 file. | `"https://.../download.mp3"` |
-| `sourceUrl` | String | Yes | URL of the original article. | `"https://.../ep-251218"` |
+| `date` | String | No | The publication date string extracted from the page. | `"26 Dec 2025"` |
+| `mp3Url` | String | No | Direct URL to the MP3 file. | `"https://.../download.mp3"` |
+| `url` | String | Yes | URL of the original article (Source URL). | `"https://.../ep-251218"` |
 | `script` | Array<Map> | No | The conversation script. | See `Script Object` below. |
 | `vocabulary` | Array<Map> | No | List of vocabulary words and definitions. | See `Vocabulary Object` below. |
-| `quiz` | Array<Map> | No | Quiz data extracted from the page. | See `Quiz Object` below. |
+| `quizContent` | Array<Map> | No | Quiz data extracted from the page. | See `Quiz Object` below. |
+| `quizUrl` | String | No | URL to the quiz iframe/page. | `"https://..."` |
 | `updatedAt` | Timestamp | Yes | Server timestamp of when the document was last updated. | `ServerTimestamp` |
 
 #### Sub-Objects
