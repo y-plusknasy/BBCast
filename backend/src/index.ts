@@ -1,4 +1,5 @@
-import * as functions from "firebase-functions/v1";
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import { onRequest } from "firebase-functions/v2/https";
 import { config } from "./config";
 import { Repository } from "./database/repository";
 
@@ -7,17 +8,20 @@ import { Repository } from "./database/repository";
 
 const repository = new Repository();
 
-export const scheduledScraper = functions.pubsub
-  .schedule("every 24 hours")
-  .timeZone("Asia/Tokyo")
-  .onRun(async (context: functions.EventContext) => {
-    console.log("Starting scheduled scraper...");
-    await runScraper();
-    console.log("Scheduled scraper finished.");
-  });
+export const scheduledScraper = onSchedule({
+  schedule: "every 24 hours",
+  timeZone: "Asia/Tokyo",
+  region: "asia-northeast1", // 東京リージョンを指定
+}, async (event) => {
+  console.log("Starting scheduled scraper...");
+  await runScraper();
+  console.log("Scheduled scraper finished.");
+});
 
 // 手動実行用のHTTP関数
-export const manualScraper = functions.https.onRequest(async (request, response) => {
+export const manualScraper = onRequest({
+  region: "asia-northeast1", // 東京リージョンを指定
+}, async (request, response) => {
   try {
     await runScraper();
     response.send("Scraping completed successfully.");
