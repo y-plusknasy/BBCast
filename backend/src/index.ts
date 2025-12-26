@@ -9,7 +9,7 @@ import { Repository } from "./database/repository";
 const repository = new Repository();
 
 export const scheduledScraper = onSchedule({
-  schedule: "every 24 hours",
+  schedule: "0 10 * * *", // 毎日 10:00 JST
   timeZone: "Asia/Tokyo",
   region: "asia-northeast1", // 東京リージョンを指定
 }, async (event) => {
