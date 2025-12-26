@@ -1,3 +1,19 @@
+import { IndexPageScraper } from './IndexPageScraper';
+
+export interface ProgramConfig {
+  id: string;
+  title: string;
+  urlPath: string;
+  scraperClass: new (baseUrl?: string) => IndexPageScraper;
+}
+
+export interface EpisodeSummary {
+  title: string;
+  url: string;
+  date?: string;
+  description?: string;
+}
+
 export interface VocabularyItem {
   word: string;
   definition: string;

@@ -9,8 +9,10 @@ import { load, CheerioAPI } from 'cheerio';
  */
 export abstract class BaseScraper {
   protected axiosInstance: AxiosInstance;
+  protected baseUrl?: string;
 
   constructor(baseUrl?: string) {
+    this.baseUrl = baseUrl;
     const config: AxiosRequestConfig = {
       timeout: 10000, // 10秒タイムアウト
       headers: {

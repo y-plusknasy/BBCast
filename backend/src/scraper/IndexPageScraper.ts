@@ -1,6 +1,6 @@
 import { BaseScraper } from './BaseScraper';
 import { CheerioAPI } from 'cheerio';
-import { config as appConfig } from '../config';
+import { EpisodeDetail, EpisodeSummary } from './types';
 
 export interface IndexPageConfig {
   listSelector: string;      // リストアイテム（各エピソードのコンテナ）のセレクタ
@@ -8,13 +8,6 @@ export interface IndexPageConfig {
   titleSelector: string;     // リストアイテム内のタイトルのセレクタ
   dateSelector?: string;     // リストアイテム内の日付のセレクタ（任意）
   descriptionSelector?: string; // リストアイテム内の概要のセレクタ（任意）
-}
-
-export interface EpisodeSummary {
-  title: string;
-  url: string;
-  date?: string;
-  description?: string;
 }
 
 /**
@@ -42,6 +35,12 @@ export abstract class IndexPageScraper extends BaseScraper {
   }
 
   /**
+   * エピソード詳細ページをスクレイピングする
+   * @param url エピソード詳細ページのURL
+   */
+  public abstract scrapeEpisode(url: string): Promise<EpisodeDetail>;
+
+  /**
    * Cheerioオブジェクトからエピソード情報を抽出する
    */
   protected extractEpisodes($: CheerioAPI): EpisodeSummary[] {
@@ -57,7 +56,7 @@ export abstract class IndexPageScraper extends BaseScraper {
       
       // 相対パスなら絶対パスに変換
       if (episodeUrl.startsWith('/')) {
-        episodeUrl = `${appConfig.bbc.baseUrl}${episodeUrl}`;
+        episodeUrl = `${this.baseUrl}${episodeUrl}`;
       }
 
       // タイトルの抽出

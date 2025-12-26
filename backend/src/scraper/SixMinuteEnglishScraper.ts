@@ -2,7 +2,6 @@ import { IndexPageScraper, IndexPageConfig } from './IndexPageScraper';
 import { EpisodeDetail, VocabularyItem, ScriptLine } from './types';
 import { SixMinuteEnglishQuizScraper } from './SixMinuteEnglishQuizScraper';
 import { CheerioAPI } from 'cheerio';
-import { config as appConfig } from '../config';
 
 export class SixMinuteEnglishScraper extends IndexPageScraper {
   private quizScraper: SixMinuteEnglishQuizScraper;
@@ -16,9 +15,9 @@ export class SixMinuteEnglishScraper extends IndexPageScraper {
     descriptionSelector: 'p'
   };
 
-  constructor() {
+  constructor(baseUrl: string = 'https://www.bbc.co.uk') {
     // BBCのドメインをBaseURLとして設定
-    super(appConfig.bbc.baseUrl, SixMinuteEnglishScraper.DEFAULT_CONFIG);
+    super(baseUrl, SixMinuteEnglishScraper.DEFAULT_CONFIG);
     this.quizScraper = new SixMinuteEnglishQuizScraper();
   }
 
@@ -81,7 +80,7 @@ export class SixMinuteEnglishScraper extends IndexPageScraper {
 
     // 相対パスの場合は絶対パスに変換
     if (quizUrl && quizUrl.startsWith('/')) {
-      quizUrl = `${appConfig.bbc.baseUrl}${quizUrl}`;
+      quizUrl = `${this.baseUrl}${quizUrl}`;
     }
 
     return quizUrl;
