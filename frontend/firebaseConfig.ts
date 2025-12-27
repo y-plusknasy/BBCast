@@ -1,36 +1,37 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, connectAuthEmulator, signInAnonymously } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getAuth, signInAnonymously } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
-// Placeholder config for development/emulator usage
-// When deploying to production, replace this with your actual Firebase Web App config
+// Production Firebase Web App config
 const firebaseConfig = {
-  apiKey: "demo-api-key",
+  apiKey: "AIzaSyAtnjiSl6DPxS1YY-PFsoeCVZjAzzB6a58",
   authDomain: "bbcast-backend.firebaseapp.com",
   projectId: "bbcast-backend",
-  storageBucket: "bbcast-backend.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  storageBucket: "bbcast-backend.firebasestorage.app",
+  messagingSenderId: "412084001830",
+  appId: "1:412084001830:web:9d4c4ffc090f7e92295ae7"
 };
 
 const app = initializeApp(firebaseConfig);
 
+// Initialize Auth and Firestore
+// Persistence is enabled by default in React Native for Firestore
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Connect to emulators in development mode
+// Note: Emulator connection is disabled to develop against production data directly.
+// If you want to use emulators, uncomment the following block.
+/*
 if (__DEV__) {
   try {
-    // Note: If testing on Android Emulator, use '10.0.2.2' instead of 'localhost'
-    // If testing on a physical device, use your machine's LAN IP address
     const emulatorHost = 'localhost';
-    
-    connectAuthEmulator(auth, `http://${emulatorHost}:9099`);
-    connectFirestoreEmulator(db, emulatorHost, 8080);
+    // connectAuthEmulator(auth, `http://${emulatorHost}:9099`);
+    // connectFirestoreEmulator(db, emulatorHost, 8080);
     console.log('Connected to Firebase Emulators');
   } catch (e) {
     console.error('Error connecting to emulators', e);
   }
 }
+*/
 
 export { auth, db, signInAnonymously };
