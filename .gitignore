@@ -50,9 +50,7 @@ ios/
 # Firebase
 
 # Local scraper scripts and results
-backend/result.json
-backend/src/test-scraper.ts
-backend/src/run-scraper.ts
+# (Moved to backend/.gitignore)
 
 .firebase/
 firebase-debug.log
