@@ -1,11 +1,12 @@
 import { StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useEffect, useState } from 'react';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { useRouter } from 'expo-router';
+import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { db } from '../../firebaseConfig';
+import { db, auth } from '../../firebaseConfig';
 
 type Episode = {
   id: string;
@@ -14,16 +15,20 @@ type Episode = {
   date: any; // Timestamp
 };
 
-export default function HomeScreen() {
+export default function EpisodeListScreen() {
+  const { id: programId } = useLocalSearchParams();
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const fetchEpisodes = async () => {
+      if (!programId) return;
+      
       try {
         const q = query(
-          collection(db, 'six_minute_english'),
+          collection(db, 'episodes'),
+          where('programId', '==', programId),
           orderBy('date', 'desc'),
           limit(20)
         );
@@ -40,15 +45,23 @@ export default function HomeScreen() {
       }
     };
 
-    fetchEpisodes();
-  }, []);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        fetchEpisodes();
+      }
+    });
+
+    return () => unsubscribe();
+  }, [programId]);
 
   const renderItem = ({ item }: { item: Episode }) => (
-    <TouchableOpacity onPress={() => router.push(`/episode/${item.id}` as any)}>
+    <TouchableOpacity onPress={() => router.push(`/episode/${item.id}`)}>
       <ThemedView style={styles.itemContainer}>
         <ThemedText type="subtitle">{item.title}</ThemedText>
         <ThemedText numberOfLines={2}>{item.description}</ThemedText>
-        <ThemedText style={styles.date}>{new Date(item.date.seconds * 1000).toLocaleDateString()}</ThemedText>
+        <ThemedText style={styles.date}>
+          {item.date?.seconds ? new Date(item.date.seconds * 1000).toLocaleDateString() : ''}
+        </ThemedText>
       </ThemedView>
     </TouchableOpacity>
   );
@@ -84,13 +97,12 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingTop: 60, // Add padding for status bar
   },
   itemContainer: {
     marginBottom: 16,
     padding: 12,
     borderRadius: 8,
-    backgroundColor: 'rgba(150, 150, 150, 0.1)', // Slight background for items
+    backgroundColor: 'rgba(150, 150, 150, 0.1)',
   },
   date: {
     fontSize: 12,

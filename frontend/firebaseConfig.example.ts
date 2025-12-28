@@ -1,6 +1,8 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously } from 'firebase/auth';
+// @ts-ignore
+import { initializeAuth, signInAnonymously, getReactNativePersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 // Example Firebase Web App config
 // Replace these values with your actual Firebase project configuration
@@ -15,7 +17,10 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-const auth = getAuth(app);
+// Initialize Auth with persistence
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+});
 const db = getFirestore(app);
 
 export { auth, db, signInAnonymously };

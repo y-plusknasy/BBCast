@@ -1,14 +1,16 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Drawer } from 'expo-router/drawer';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { auth, signInAnonymously } from '../firebaseConfig';
+import { AudioProvider } from '@/context/AudioContext';
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  initialRouteName: 'index',
 };
 
 export default function RootLayout() {
@@ -28,12 +30,42 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AudioProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Drawer>
+            <Drawer.Screen
+              name="index"
+              options={{
+                drawerLabel: 'Programs',
+                title: 'BBC Learning English',
+              }}
+            />
+            <Drawer.Screen
+              name="program/[id]"
+              options={{
+                drawerItemStyle: { display: 'none' }, // Hide from drawer menu
+                title: 'Episodes',
+              }}
+            />
+            <Drawer.Screen
+              name="episode/[id]"
+              options={{
+                drawerItemStyle: { display: 'none' }, // Hide from drawer menu
+                headerShown: false, // Episode details will manage their own header or use stack
+              }}
+            />
+            <Drawer.Screen
+              name="modal"
+              options={{
+                drawerItemStyle: { display: 'none' },
+                title: 'Modal'
+              }}
+            />
+          </Drawer>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </AudioProvider>
+    </GestureHandlerRootView>
   );
 }
