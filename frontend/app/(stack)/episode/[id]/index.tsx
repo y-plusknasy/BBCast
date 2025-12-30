@@ -6,7 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { db, auth } from '../../../firebaseConfig';
+import { db, auth } from '../../../../firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import { useAudio } from '@/context/AudioContext';
 
@@ -85,7 +85,7 @@ export default function EpisodeTopicListScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: 'Episode Topics' }} />
+      <Stack.Screen options={{ title: 'Episode Topics', headerShown: true }} />
       
       <View style={styles.header}>
         <ThemedText type="title">{episode.title}</ThemedText>
@@ -98,7 +98,12 @@ export default function EpisodeTopicListScreen() {
         <MenuButton 
           title="Play Audio" 
           icon="play-circle-outline" 
-          onPress={() => episode && playEpisode(episode.audioUrl, episode.title)} 
+          onPress={() => episode && playEpisode(episode.audioUrl, episode.title)}
+        />
+        <MenuButton 
+          title="Download Audio" 
+          icon="download-outline" 
+          onPress={() => alert('Download feature coming soon')}
         />
         <MenuButton title="Vocabulary" icon="book-outline" route={`/episode/${id}/vocabulary`} />
         <MenuButton title="Transcript" icon="document-text-outline" route={`/episode/${id}/transcript`} />

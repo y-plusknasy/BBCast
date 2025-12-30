@@ -5,11 +5,18 @@ import { ThemedText } from './themed-text';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+import { useState, useEffect } from 'react';
 
 export default function AudioPlayerBar() {
   const { player, currentEpisodeTitle } = useAudio();
   const colorScheme = useColorScheme();
   const status = useAudioPlayerStatus(player);
+  const [isLooping, setIsLooping] = useState(player.loop);
+
+  // Sync local loop state with player loop state if it changes externally
+  useEffect(() => {
+    setIsLooping(player.loop);
+  }, [player.loop]);
   
   // If no episode is selected, don't show the bar
   if (!currentEpisodeTitle) return null;
@@ -20,6 +27,12 @@ export default function AudioPlayerBar() {
     } else {
       player.play();
     }
+  };
+
+  const toggleLoop = () => {
+    const newLoopState = !player.loop;
+    player.loop = newLoopState;
+    setIsLooping(newLoopState);
   };
 
   const backgroundColor = Colors[colorScheme ?? 'light'].background;
@@ -34,17 +47,27 @@ export default function AudioPlayerBar() {
         </ThemedText>
       </View>
       
-      <TouchableOpacity onPress={togglePlay} style={styles.button}>
-        {status.isBuffering ? (
-          <ActivityIndicator color={tintColor} />
-        ) : (
+      <View style={styles.controls}>
+        <TouchableOpacity onPress={toggleLoop} style={styles.controlButton}>
           <Ionicons 
-            name={player.playing ? "pause" : "play"} 
-            size={32} 
-            color={tintColor} 
+            name={isLooping ? "repeat" : "repeat-outline"} 
+            size={24} 
+            color={isLooping ? tintColor : 'gray'} 
           />
-        )}
-      </TouchableOpacity>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={togglePlay} style={styles.controlButton}>
+          {status.isBuffering ? (
+            <ActivityIndicator color={tintColor} />
+          ) : (
+            <Ionicons 
+              name={player.playing ? "pause" : "play"} 
+              size={32} 
+              color={tintColor} 
+            />
+          )}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -76,7 +99,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.7,
   },
-  button: {
+  controls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  controlButton: {
     padding: 8,
   },
 });

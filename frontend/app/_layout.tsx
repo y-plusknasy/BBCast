@@ -8,9 +8,11 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { auth, signInAnonymously } from '../firebaseConfig';
 import { AudioProvider } from '@/context/AudioContext';
+import AudioPlayerBar from '@/components/AudioPlayerBar';
+import CustomDrawerContent from '@/components/CustomDrawerContent';
 
 export const unstable_settings = {
-  initialRouteName: 'index',
+  initialRouteName: '(stack)',
 };
 
 export default function RootLayout() {
@@ -33,36 +35,19 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AudioProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Drawer>
+          <Drawer 
+            drawerContent={(props) => <CustomDrawerContent {...props} />}
+            screenOptions={{ headerShown: false }}
+          >
             <Drawer.Screen
-              name="index"
+              name="(stack)"
               options={{
-                drawerLabel: 'Programs',
+                drawerLabel: 'Home',
                 title: 'BBC Learning English',
               }}
             />
-            <Drawer.Screen
-              name="program/[id]"
-              options={{
-                drawerItemStyle: { display: 'none' }, // Hide from drawer menu
-                title: 'Episodes',
-              }}
-            />
-            <Drawer.Screen
-              name="episode/[id]"
-              options={{
-                drawerItemStyle: { display: 'none' }, // Hide from drawer menu
-                headerShown: false, // Episode details will manage their own header or use stack
-              }}
-            />
-            <Drawer.Screen
-              name="modal"
-              options={{
-                drawerItemStyle: { display: 'none' },
-                title: 'Modal'
-              }}
-            />
           </Drawer>
+          <AudioPlayerBar />
           <StatusBar style="auto" />
         </ThemeProvider>
       </AudioProvider>

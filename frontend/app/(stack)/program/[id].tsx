@@ -6,7 +6,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { db, auth } from '../../firebaseConfig';
+import { db, auth } from '../../../firebaseConfig';
+import { Ionicons } from '@expo/vector-icons';
 
 type Episode = {
   id: string;

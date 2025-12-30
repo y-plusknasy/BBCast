@@ -1,39 +1,39 @@
-import { StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, ScrollView, ActivityIndicator, useWindowDimensions, useColorScheme } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
+import RenderHtml from 'react-native-render-html';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { db } from '../../../firebaseConfig';
+import { db } from '../../../../firebaseConfig';
+import { Colors } from '@/constants/theme';
 
-type VocabularyItem = {
-  word: string;
-  definition: string;
-};
-
-export default function VocabularyScreen() {
+export default function TranscriptScreen() {
   const { id } = useLocalSearchParams();
-  const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
+  const [script, setScript] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const { width } = useWindowDimensions();
+  const colorScheme = useColorScheme();
+  const textColor = Colors[colorScheme ?? 'light'].text;
 
   useEffect(() => {
-    const fetchVocabulary = async () => {
+    const fetchScript = async () => {
       if (!id) return;
       try {
         const docRef = doc(db, 'episodes', id as string);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setVocabulary(data.vocabulary || []);
+          setScript(data.script || '');
         }
       } catch (error) {
-        console.error("Error fetching vocabulary:", error);
+        console.error("Error fetching script:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchVocabulary();
+    fetchScript();
   }, [id]);
 
   if (loading) {
@@ -44,18 +44,24 @@ export default function VocabularyScreen() {
     );
   }
 
+  const tagsStyles = {
+    body: { color: textColor, fontSize: 16, lineHeight: 24 },
+    p: { marginBottom: 16 },
+    strong: { fontWeight: 'bold' as const, color: '#a1cedc' },
+  };
+
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: 'Vocabulary' }} />
+      <Stack.Screen options={{ title: 'Transcript' }} />
       <ScrollView contentContainerStyle={styles.content}>
-        {vocabulary.map((item, index) => (
-          <ThemedView key={index} style={styles.item}>
-            <ThemedText type="defaultSemiBold" style={styles.word}>{item.word}</ThemedText>
-            <ThemedText>{item.definition}</ThemedText>
-          </ThemedView>
-        ))}
-        {vocabulary.length === 0 && (
-          <ThemedText>No vocabulary available for this episode.</ThemedText>
+        {script ? (
+          <RenderHtml
+            contentWidth={width - 32}
+            source={{ html: script }}
+            tagsStyles={tagsStyles}
+          />
+        ) : (
+          <ThemedText>No transcript available for this episode.</ThemedText>
         )}
       </ScrollView>
     </ThemedView>
@@ -73,16 +79,5 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-  },
-  item: {
-    marginBottom: 24,
-    padding: 16,
-    backgroundColor: 'rgba(150, 150, 150, 0.1)',
-    borderRadius: 8,
-  },
-  word: {
-    marginBottom: 8,
-    fontSize: 18,
-    color: '#a1cedc',
   },
 });
