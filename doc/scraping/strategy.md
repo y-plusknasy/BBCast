@@ -46,7 +46,9 @@ BBC Learning Englishのサイト構造に対応するため、スクレイピン
 ## 4. 特殊なHTML構造への対応 (Implementation Details)
 
 ### 4.1. スクリプトの解析 (Script Parsing)
-BBC Learning Englishのスクリプトは、多くの場合、1つの巨大な `<p>` タグの中に複数の話者の発言が詰め込まれています。
+
+#### パターンA: 6 Minute English / The English We Speak
+これらの番組では、多くの場合、1つの巨大な `<p>` タグの中に複数の話者の発言が詰め込まれています。
 ```html
 <p>
   <strong>Neil</strong><br>Hello...<br>
@@ -59,7 +61,25 @@ BBC Learning Englishのスクリプトは、多くの場合、1つの巨大な `
 
 この厳密な判定により、セリフの文中に含まれる強調表示の `<strong>` タグ（例: `This is <strong>important</strong>.`) を誤って話者名として分割してしまうことを防いでいます。
 
+#### パターンB: Real Easy English
+この番組では、エピソードによってHTML構造が異なります。
+
+1.  **新形式**: 各話者の発言が個別の `<p>` タグに分かれている。
+    ```html
+    <p><strong>Neil</strong> Hello...</p>
+    <p><strong>Georgie</strong> Hi Neil...</p>
+    ```
+2.  **旧形式**: パターンAと同様に、1つの `<p>` タグ内に複数の発言が含まれている。
+
+`RealEasyEnglishScraper` では、これら両方に対応するため、以下のロジックを実装しています。
+*   `<h3>Transcript</h3>` から次の `<h3>` までの間のすべての `<p>` タグを対象とする。
+*   各 `<p>` タグ内の子ノードを走査し、以下のいずれかの条件を満たす `<strong>` タグを話者ラベルとして認識する。
+    *   段落の最初の子要素である。
+    *   直後に `<br>` タグが存在する。
+*   話者ラベルが見つかるたびに、それまでのテキストを前の話者のセリフとして確定させ、新しいセリフの収集を開始する。
+
 ### 4.2. 語彙リストの解析 (Vocabulary Parsing)
+#### パターンA: 6 Minute English
 語彙リストも同様に、1つの `<p>` タグ内に `<br>` で区切られて記述されています。
 ```html
 <p>
@@ -68,6 +88,10 @@ BBC Learning Englishのスクリプトは、多くの場合、1つの巨大な `
 </p>
 ```
 これを `<br>` で分割し、`<strong>` タグの有無で単語と定義を判別してペアリングしています。
+
+#### パターンB: Real Easy English
+`<h3>Vocabulary</h3>` の後に続く `<p>` タグ群を走査します。
+各 `<p>` タグ内に `<strong>` タグが含まれている場合、それを単語とし、残りのテキストを定義として抽出します。
 
 ### 4.3. クイズデータの解析 (Quiz Parsing)
 BBCのクイズは `riddle.com` という外部サービスを利用して埋め込まれています。

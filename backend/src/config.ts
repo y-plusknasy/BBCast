@@ -1,6 +1,8 @@
 import * as dotenv from 'dotenv';
 import { ProgramConfig } from './scraper/types';
 import { SixMinuteEnglishScraper } from './scraper/SixMinuteEnglishScraper';
+import { TheEnglishWeSpeakScraper } from './scraper/TheEnglishWeSpeakScraper';
+import { RealEasyEnglishScraper } from './scraper/RealEasyEnglishScraper';
 
 dotenv.config();
 
@@ -14,6 +16,18 @@ export const config = {
       title: '6 Minute English',
       urlPath: '/learningenglish/english/features/6-minute-english',
       scraperClass: SixMinuteEnglishScraper,
+    },
+    {
+      id: 'the-english-we-speak',
+      title: 'The English We Speak',
+      urlPath: '/learningenglish/features/the-english-we-speak',
+      scraperClass: TheEnglishWeSpeakScraper,
+    },
+    {
+      id: 'real-easy-english',
+      title: 'Real Easy English',
+      urlPath: '/learningenglish/english/features/real-easy-english',
+      scraperClass: RealEasyEnglishScraper,
     },
   ] as ProgramConfig[],
 };
