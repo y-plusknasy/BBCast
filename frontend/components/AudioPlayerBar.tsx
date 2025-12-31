@@ -1,38 +1,38 @@
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useAudioPlayerStatus } from 'expo-audio';
 import { useAudio } from '@/context/AudioContext';
 import { ThemedText } from './themed-text';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import TrackPlayer, { RepeatMode } from 'react-native-track-player';
 
 export default function AudioPlayerBar() {
-  const { player, currentEpisodeTitle } = useAudio();
+  const { currentEpisodeTitle, isPlaying, isLoading, position, duration, pauseEpisode, resumeEpisode } = useAudio();
   const colorScheme = useColorScheme();
-  const status = useAudioPlayerStatus(player);
-  const [isLooping, setIsLooping] = useState(player.loop);
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>(RepeatMode.Off);
 
-  // Sync local loop state with player loop state if it changes externally
-  useEffect(() => {
-    setIsLooping(player.loop);
-  }, [player.loop]);
-  
   // If no episode is selected, don't show the bar
   if (!currentEpisodeTitle) return null;
 
   const togglePlay = () => {
-    if (player.playing) {
-      player.pause();
+    if (isPlaying) {
+      pauseEpisode();
     } else {
-      player.play();
+      resumeEpisode();
     }
   };
 
-  const toggleLoop = () => {
-    const newLoopState = !player.loop;
-    player.loop = newLoopState;
-    setIsLooping(newLoopState);
+  const toggleLoop = async () => {
+    let newMode = RepeatMode.Off;
+    if (repeatMode === RepeatMode.Off) {
+      newMode = RepeatMode.Track;
+    } else {
+      newMode = RepeatMode.Off;
+    }
+    
+    await TrackPlayer.setRepeatMode(newMode);
+    setRepeatMode(newMode);
   };
 
   const backgroundColor = Colors[colorScheme ?? 'light'].background;
@@ -43,25 +43,25 @@ export default function AudioPlayerBar() {
       <View style={styles.info}>
         <ThemedText style={styles.title} numberOfLines={1}>{currentEpisodeTitle}</ThemedText>
         <ThemedText style={styles.time}>
-          {formatTime(status.currentTime)} / {formatTime(status.duration)}
+          {formatTime(position)} / {formatTime(duration)}
         </ThemedText>
       </View>
       
       <View style={styles.controls}>
         <TouchableOpacity onPress={toggleLoop} style={styles.controlButton}>
           <Ionicons 
-            name={isLooping ? "repeat" : "repeat-outline"} 
+            name={repeatMode === RepeatMode.Track ? "repeat" : "repeat-outline"} 
             size={24} 
-            color={isLooping ? tintColor : 'gray'} 
+            color={repeatMode === RepeatMode.Track ? tintColor : 'gray'} 
           />
         </TouchableOpacity>
 
         <TouchableOpacity onPress={togglePlay} style={styles.controlButton}>
-          {status.isBuffering ? (
+          {isLoading ? (
             <ActivityIndicator color={tintColor} />
           ) : (
             <Ionicons 
-              name={player.playing ? "pause" : "play"} 
+              name={isPlaying ? "pause" : "play"} 
               size={32} 
               color={tintColor} 
             />

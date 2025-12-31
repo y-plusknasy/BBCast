@@ -26,7 +26,13 @@ export default function StackLayout() {
           headerLeft: () => <DrawerToggle />
         }} 
       />
-      <Stack.Screen name="program/[id]" options={{ title: 'Episodes' }} />
+      <Stack.Screen 
+        name="program/[id]" 
+        options={{ 
+          title: 'Episodes',
+          headerLeft: () => <DrawerToggle />
+        }} 
+      />
       <Stack.Screen name="episode/[id]" options={{ headerShown: false }} />
     </Stack>
   );

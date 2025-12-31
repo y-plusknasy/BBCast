@@ -77,7 +77,7 @@ const ProgramListItem = ({ item }: { item: Program }) => {
             {latestEpisodes.map((ep) => (
               <View key={ep.id} style={styles.episodeRow}>
                 <ThemedText style={styles.episodeDate}>
-                  {ep.date?.seconds ? new Date(ep.date.seconds * 1000).toLocaleDateString() : ''}
+                  {typeof ep.date === 'string' ? ep.date : (ep.date?.seconds ? new Date(ep.date.seconds * 1000).toLocaleDateString() : '')}
                 </ThemedText>
                 <ThemedText numberOfLines={1} style={styles.episodeTitle}>
                   {ep.title}

@@ -85,8 +85,6 @@ export default function EpisodeTopicListScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: 'Episode Topics', headerShown: true }} />
-      
       <View style={styles.header}>
         <ThemedText type="title">{episode.title}</ThemedText>
         <ThemedText style={styles.date}>
@@ -98,7 +96,7 @@ export default function EpisodeTopicListScreen() {
         <MenuButton 
           title="Play Audio" 
           icon="play-circle-outline" 
-          onPress={() => episode && playEpisode(episode.audioUrl, episode.title)}
+          onPress={() => episode && playEpisode(episode.audioUrl, episode.title, 'BBC Learning English')}
         />
         <MenuButton 
           title="Download Audio" 
