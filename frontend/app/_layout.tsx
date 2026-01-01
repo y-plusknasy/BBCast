@@ -13,9 +13,6 @@ import AudioPlayerBar from '@/components/AudioPlayerBar';
 import CustomDrawerContent from '@/components/CustomDrawerContent';
 import { PlaybackService } from '@/services/PlaybackService';
 
-// Register the service
-TrackPlayer.registerPlaybackService(() => PlaybackService);
-
 export const unstable_settings = {
   initialRouteName: '(stack)',
 };
