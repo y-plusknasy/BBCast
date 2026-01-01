@@ -30,15 +30,23 @@ export class SixMinuteEnglishScraper extends IndexPageScraper {
     
     // タイトル取得
     // <div class="widget widget-heading ..."><h3>Title</h3></div>
-    const title = this.cleanText($('.widget.widget-heading h3').text());
+    const titles = $('.widget.widget-heading h3')
+      .map((_, el) => this.cleanText($(el).text()))
+      .get()
+      .filter(text => text !== '6 Minute English');
+
+    const title = titles.length > 0 ? titles[0] : '';
     
     // 公開日取得
     // <div class="widget widget-bbcle-featuresubheader">...<h3><b>Episode ...</b> / 25 Dec 2025</h3>...</div>
-    let date = this.cleanText($('.widget.widget-bbcle-featuresubheader h3').text());
+    let dateStr = this.cleanText($('.widget.widget-bbcle-featuresubheader h3').text());
     // "Episode 251225 / 25 Dec 2025" のような形式から日付部分を抽出
-    if (date.includes('/')) {
-      date = date.split('/')[1].trim();
+    if (dateStr.includes('/')) {
+      dateStr = dateStr.split('/')[1].trim();
     }
+    
+    const parsedDate = new Date(dateStr);
+    const date = isNaN(parsedDate.getTime()) ? undefined : parsedDate;
 
     // Description取得
     const description = $('meta[name="description"]').attr('content') || '';

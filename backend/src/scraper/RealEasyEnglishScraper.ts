@@ -28,10 +28,13 @@ export class RealEasyEnglishScraper extends IndexPageScraper {
     title = this.cleanText(title || '');
 
     // 公開日取得
-    let date = this.cleanText($('.widget.widget-bbcle-featuresubheader h3').text());
-    if (date.includes('/')) {
-      date = date.split('/')[1].trim();
+    let dateStr = this.cleanText($('.widget.widget-bbcle-featuresubheader h3').text());
+    if (dateStr.includes('/')) {
+      dateStr = dateStr.split('/')[1].trim();
     }
+    
+    const parsedDate = new Date(dateStr);
+    const date = isNaN(parsedDate.getTime()) ? undefined : parsedDate;
 
     // Description取得: <h3>Introduction</h3> の後の pタグ
     let description = '';
