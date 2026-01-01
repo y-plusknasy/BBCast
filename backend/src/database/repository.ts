@@ -7,6 +7,7 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
+db.settings({ ignoreUndefinedProperties: true });
 
 export class Repository {
   /**
@@ -25,7 +26,12 @@ export class Repository {
     }
 
     const data = snapshot.docs[0].data();
-    // FirestoreのデータをEpisodeDetail型に変換（必要に応じて）
+    
+    // TimestampをDateに変換
+    if (data.date && typeof data.date.toDate === 'function') {
+      data.date = data.date.toDate();
+    }
+
     return data as EpisodeDetail;
   }
 

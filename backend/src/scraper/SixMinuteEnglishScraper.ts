@@ -28,11 +28,28 @@ export class SixMinuteEnglishScraper extends IndexPageScraper {
   public async scrapeEpisode(url: string): Promise<EpisodeDetail> {
     const $ = await this.fetchAndParse(url);
     
-    // タイトル取得（h1がページタイトルになっていることが多い）
-    const title = this.cleanText($('h1').text());
+    // タイトル取得
+    // <div class="widget widget-heading ..."><h3>Title</h3></div>
+    const titles = $('.widget.widget-heading h3')
+      .map((_, el) => this.cleanText($(el).text()))
+      .get()
+      .filter(text => text !== '6 Minute English');
+
+    const title = titles.length > 0 ? titles[0] : '';
     
-    // 公開日などのメタデータ取得（必要に応じて実装）
-    const date = this.cleanText($('.details h3').first().text());
+    // 公開日取得
+    // <div class="widget widget-bbcle-featuresubheader">...<h3><b>Episode ...</b> / 25 Dec 2025</h3>...</div>
+    let dateStr = this.cleanText($('.widget.widget-bbcle-featuresubheader h3').text());
+    // "Episode 251225 / 25 Dec 2025" のような形式から日付部分を抽出
+    if (dateStr.includes('/')) {
+      dateStr = dateStr.split('/')[1].trim();
+    }
+    
+    const parsedDate = new Date(dateStr);
+    const date = isNaN(parsedDate.getTime()) ? undefined : parsedDate;
+
+    // Description取得
+    const description = $('meta[name="description"]').attr('content') || '';
 
     const mp3Url = this.extractMp3Url($);
     const quizUrl = this.extractQuizUrl($);
@@ -47,6 +64,7 @@ export class SixMinuteEnglishScraper extends IndexPageScraper {
 
     return {
       title,
+      description,
       date,
       url,
       mp3Url,

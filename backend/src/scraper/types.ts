@@ -38,7 +38,7 @@ export interface QuizQuestion {
 export interface EpisodeDetail {
   title: string;
   description?: string;
-  date?: string;
+  date?: Date;
   url: string;
   mp3Url?: string;
   script: ScriptLine[];
