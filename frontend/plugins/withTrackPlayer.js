@@ -27,6 +27,7 @@ const withTrackPlayer = (config) => {
           'android:enabled': 'true',
           'android:exported': 'true',
           'android:foregroundServiceType': 'mediaPlayback',
+          'android:stopWithTask': 'false',
         },
         'intent-filter': [
           {

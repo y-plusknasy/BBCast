@@ -4,14 +4,12 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
-import TrackPlayer from 'react-native-track-player';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { auth, signInAnonymously } from '../firebaseConfig';
 import { AudioProvider } from '@/context/AudioContext';
 import AudioPlayerBar from '@/components/AudioPlayerBar';
 import CustomDrawerContent from '@/components/CustomDrawerContent';
-import { PlaybackService } from '@/services/PlaybackService';
 
 export const unstable_settings = {
   initialRouteName: '(stack)',

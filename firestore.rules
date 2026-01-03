@@ -3,9 +3,20 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ヘルパー関数: ユーザーが認証済みかどうか
+    // ヘルパー関数: ユーザーが認証済みかどうか（匿名認証を含む）
     function isAuthenticated() {
       return request.auth != null;
+    }
+
+    // ヘルパー関数: 匿名認証ユーザーかどうか
+    function isAnonymous() {
+      return request.auth != null && 
+             request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    // ヘルパー関数: アプリクライアントからのアクセスかどうか（匿名認証を含む全ての認証済みユーザー）
+    function isAppClient() {
+      return isAuthenticated();  // 匿名認証も含む
     }
 
     // =========================================================
@@ -13,18 +24,18 @@ service cloud.firestore {
     // =========================================================
     
     // 番組情報 (programs)
-    // - Read: 認証済みユーザーなら誰でも可
+    // - Read: アプリクライアント（匿名認証含む）からのアクセスを許可
     // - Write: クライアントからは不可 (Admin SDKのみ)
     match /programs/{programId} {
-      allow read: if isAuthenticated();
+      allow read: if isAppClient();
       allow write: if false;
     }
 
     // エピソード情報 (episodes)
-    // - Read: 認証済みユーザーなら誰でも可
+    // - Read: アプリクライアント（匿名認証含む）からのアクセスを許可
     // - Write: クライアントからは不可 (Admin SDKのみ)
     match /episodes/{episodeId} {
-      allow read: if isAuthenticated();
+      allow read: if isAppClient();
       allow write: if false;
     }
   }

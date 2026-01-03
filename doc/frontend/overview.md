@@ -2,12 +2,57 @@
 
 ## 1. アーキテクチャと技術スタック
 
-*   **Framework**: React Native (via [Expo SDK 52])
+*   **Framework**: React Native (via [Expo SDK 54])
 *   **Language**: TypeScript
 *   **Routing**: [Expo Router](https://docs.expo.dev/router/introduction/)
 *   **Backend Integration**: Firebase JS SDK (Firestore)
     *   **Collection**: `episodes` (Field `programId` で番組を識別)
     *   **Auth**: Anonymous Auth (with AsyncStorage persistence)
+*   **Audio Playback**: react-native-track-player v5.0.0-alpha0
+    *   **Note**: New Architecture (TurboModules) サポートのため、アルファ版を使用
+
+### 重要な設定変更（開発中の追加対応）
+
+#### 1. New Architecture の有効化
+app.json に以下の設定を追加しました：
+```json
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "newArchEnabled": true,
+            "extraGradleProperties": {
+              "android.useAndroidX": "true",
+              "android.enableJetifier": "true"
+            }
+          }
+        }
+      ]
+    ]
+  }
+}
+```
+
+これにより、React Native の New Architecture が有効化され、react-native-track-player などの TurboModule 対応ライブラリが正常に動作します。
+
+#### 2. Babel 設定
+New Architecture との互換性を確保するため、`babel.config.js` を作成：
+```javascript
+module.exports = function (api) {
+  api.cache(true);
+  return {
+    presets: ['babel-preset-expo'],
+  };
+};
+```
+
+#### 3. Platform 分離
+Web プラットフォームでネイティブモジュールが読み込まれないよう、`Platform.OS` チェックを実装：
+- `index.js`: TrackPlayer の登録を Web では実行しない
+- `AudioContext.tsx`: Web 用と Native 用で別々の Provider を実装
 
 ## 2. 画面遷移と構成 (Navigation Flow)
 

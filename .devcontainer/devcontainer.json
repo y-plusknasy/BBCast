@@ -11,7 +11,7 @@
       "installMaven": false
     }
   },
-  "forwardPorts": [4000, 8080, 9099],
+  "forwardPorts": [4000, 8080, 8081, 9099],
   "postCreateCommand": "npm install -g firebase-tools && cd backend && npm install && cd ../frontend && npm install",
   "customizations": {
     "vscode": {

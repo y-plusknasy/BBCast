@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import TrackPlayer, { State, usePlaybackState, useProgress } from 'react-native-track-player';
-import { setupPlayer } from '../services/SetupService';
+import { Platform } from 'react-native';
 
 type AudioContextType = {
   playEpisode: (url: string, title: string, artist?: string, artwork?: string) => Promise<void>;
@@ -24,7 +23,42 @@ export const useAudio = () => {
   return context;
 };
 
-export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
+// Web プラットフォーム用のダミー実装
+const WebAudioProvider = ({ children }: { children: React.ReactNode }) => {
+  const [currentEpisodeTitle] = useState<string | null>(null);
+
+  const playEpisode = async () => {
+    console.log('[Web] Audio playback not supported');
+  };
+
+  const pauseEpisode = async () => {};
+  const resumeEpisode = async () => {};
+  const seekTo = async () => {};
+
+  return (
+    <AudioContext.Provider value={{ 
+      playEpisode, 
+      pauseEpisode, 
+      resumeEpisode, 
+      seekTo,
+      currentEpisodeTitle, 
+      isPlaying: false,
+      isLoading: false,
+      position: 0,
+      duration: 0
+    }}>
+      {children}
+    </AudioContext.Provider>
+  );
+};
+
+// ネイティブプラットフォーム用の実装
+const NativeAudioProvider = ({ children }: { children: React.ReactNode }) => {
+  // dynamic import でエラーを回避
+  const TrackPlayer = require('react-native-track-player').default;
+  const { State, usePlaybackState, useProgress } = require('react-native-track-player');
+  const { setupPlayer } = require('../services/SetupService');
+
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [currentEpisodeTitle, setCurrentEpisodeTitle] = useState<string | null>(null);
   
@@ -45,7 +79,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await TrackPlayer.reset();
       await TrackPlayer.add({
-        id: url, // URLをIDとして使用
+        id: url,
         url: url,
         title: title,
         artist: artist,
@@ -89,3 +123,6 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     </AudioContext.Provider>
   );
 };
+
+// プラットフォームに応じて適切な Provider を export
+export const AudioProvider = Platform.OS === 'web' ? WebAudioProvider : NativeAudioProvider;

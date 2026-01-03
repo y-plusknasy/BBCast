@@ -21,10 +21,13 @@
 本プロジェクトでは、開発効率と運用コストのバランスを考慮し、以下の技術スタックを採用します。
 
 ### フロントエンド (Mobile App)
-*   **Framework**: React Native (Expo)
+*   **Framework**: React Native (Expo SDK 54)
     *   クロスプラットフォーム（iOS/Android）対応と開発スピードを重視。
+    *   **New Architecture**: React Native の New Architecture (TurboModules) を有効化。
 *   **Language**: TypeScript
 *   **State Management**: React Context API / Hooks (必要に応じてRedux/Zustand等を検討)
+*   **Audio Playback**: react-native-track-player v5.0.0-alpha0
+    *   安定版 (v4.x) は New Architecture 非対応のため、アルファ版を使用。
 
 ### バックエンド (Backend)
 *   **Runtime**: Node.js (TypeScript)
