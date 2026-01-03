@@ -22,6 +22,8 @@ dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+doc/logs/
+doc/logs/*
 
 # Expo
 .expo/
@@ -84,3 +86,5 @@ data/images/
 *.mp3
 *.mp4
 *.wav
+backend/src/import-data.ts
+backend/src/scrape.ts
