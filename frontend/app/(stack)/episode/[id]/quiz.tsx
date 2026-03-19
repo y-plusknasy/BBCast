@@ -4,7 +4,6 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useEpisode } from '@/contexts/episode-context';
-import type { QuizQuestion } from '@bbcast/shared';
 
 export default function QuizScreen() {
   const episode = useEpisode();
