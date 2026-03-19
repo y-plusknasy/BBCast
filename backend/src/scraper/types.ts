@@ -1,3 +1,13 @@
+// 共有パッケージから型を re-export
+export {
+  type ScriptLine,
+  type VocabularyItem,
+  type QuizOption,
+  type QuizQuestion,
+  type EpisodeSummary,
+  type EpisodeDetail,
+} from '@bbcast/shared';
+
 import { IndexPageScraper } from './IndexPageScraper';
 
 export interface ProgramConfig {
@@ -5,44 +15,4 @@ export interface ProgramConfig {
   title: string;
   urlPath: string;
   scraperClass: new (baseUrl?: string) => IndexPageScraper;
-}
-
-export interface EpisodeSummary {
-  title: string;
-  url: string;
-  date?: string;
-  description?: string;
-}
-
-export interface VocabularyItem {
-  word: string;
-  definition: string;
-}
-
-export interface ScriptLine {
-  speaker: string;
-  text: string;
-}
-
-export interface QuizOption {
-  label: string;
-  isCorrect: boolean;
-}
-
-export interface QuizQuestion {
-  question: string;
-  options: QuizOption[];
-  answerIndex: number;
-}
-
-export interface EpisodeDetail {
-  title: string;
-  description?: string;
-  date?: Date;
-  url: string;
-  mp3Url?: string;
-  script: ScriptLine[];
-  vocabulary: VocabularyItem[];
-  quizUrl?: string;
-  quizContent?: QuizQuestion[];
 }

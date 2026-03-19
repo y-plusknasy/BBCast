@@ -1,18 +1,17 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { auth, signInAnonymously } from '../firebaseConfig';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { AudioProvider } from '@/contexts/audio-context';
+import { AudioPlayerBar } from '@/components/audio-player-bar';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const signIn = async () => {
@@ -21,19 +20,27 @@ export default function RootLayout() {
         console.log('Signed in anonymously');
       } catch (error) {
         console.error('Error signing in anonymously:', error);
+      } finally {
+        setIsReady(true);
       }
     };
 
     signIn();
   }, []);
 
+  if (!isReady) {
+    return null;
+  }
+
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
+      <AudioProvider>
+        <Stack>
+          <Stack.Screen name="(stack)" options={{ headerShown: false }} />
+        </Stack>
+        <AudioPlayerBar />
+        <StatusBar style="auto" />
+      </AudioProvider>
     </ThemeProvider>
   );
 }

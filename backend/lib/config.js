@@ -35,11 +35,14 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.config = void 0;
 const dotenv = __importStar(require("dotenv"));
+const shared_1 = require("@bbcast/shared");
 const SixMinuteEnglishScraper_1 = require("./scraper/SixMinuteEnglishScraper");
+const TheEnglishWeSpeakScraper_1 = require("./scraper/TheEnglishWeSpeakScraper");
+const RealEasyEnglishScraper_1 = require("./scraper/RealEasyEnglishScraper");
 dotenv.config();
 exports.config = {
     bbc: {
-        baseUrl: process.env.BBC_BASE_URL || 'https://www.bbc.co.uk',
+        baseUrl: process.env.BBC_BASE_URL || shared_1.BBC_CONFIG.BASE_URL,
     },
     programs: [
         {
@@ -47,6 +50,18 @@ exports.config = {
             title: '6 Minute English',
             urlPath: '/learningenglish/english/features/6-minute-english',
             scraperClass: SixMinuteEnglishScraper_1.SixMinuteEnglishScraper,
+        },
+        {
+            id: 'the-english-we-speak',
+            title: 'The English We Speak',
+            urlPath: '/learningenglish/features/the-english-we-speak',
+            scraperClass: TheEnglishWeSpeakScraper_1.TheEnglishWeSpeakScraper,
+        },
+        {
+            id: 'real-easy-english',
+            title: 'Real Easy English',
+            urlPath: '/learningenglish/english/features/real-easy-english',
+            scraperClass: RealEasyEnglishScraper_1.RealEasyEnglishScraper,
         },
     ],
 };

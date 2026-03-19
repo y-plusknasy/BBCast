@@ -2,15 +2,13 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, signInAnonymously } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
-// Placeholder config for development/emulator usage
-// When deploying to production, replace this with your actual Firebase Web App config
 const firebaseConfig = {
-  apiKey: "demo-api-key",
+  apiKey: "AIzaSyCxzZEiZMUAqw0D1ImjOMdmGroE2JnV6sk",
   authDomain: "bbcast-backend.firebaseapp.com",
   projectId: "bbcast-backend",
-  storageBucket: "bbcast-backend.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  storageBucket: "bbcast-backend.firebasestorage.app",
+  messagingSenderId: "412084001830",
+  appId: "1:412084001830:web:9d4c4ffc090f7e92295ae7",
 };
 
 const app = initializeApp(firebaseConfig);
