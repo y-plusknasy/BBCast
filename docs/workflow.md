@@ -34,6 +34,35 @@
 *   **確認方法**:
     *   アプリを起動し、本番データ（スクレイピング済みのエピソード等）が表示されることを確認します。
 
+#### 開発環境の起動方法
+
+##### 【推奨】USB 接続による開発
+**Background**: `npx expo start --tunnel` は、ユーザー名にアンダースコア (`_`) が含まれる場合、DNS 標準 (STD 3) に違反するため URL が生成できない問題があります。
+
+**解決策**: Android 実機を USB 接続し、adb を使用して Metro Bundler に接続します。
+
+```bash
+# 1. Android 端末を USB で接続し、USB デバッグを有効化
+
+# 2. adb でポートフォワーディングを設定
+adb reverse tcp:8081 tcp:8081
+
+# 3. Metro Bundler を起動（tunnel なし）
+cd frontend
+npx expo start --clear --dev-client
+
+# 4. Development Build アプリから「Enter URL manually」で接続
+# URL: http://localhost:8081
+```
+
+**Dev Container の場合**: `.devcontainer/devcontainer.json` の `forwardPorts` に `8081` を追加して、ホスト側からもアクセス可能にします。
+
+##### Tunnel 接続（アンダースコアなしのユーザー名の場合のみ）
+```bash
+cd frontend
+npx expo start --tunnel --dev-client
+```
+
 ### 2.2. Backend開発 (Scraping/DB Logic)
 *   **実行環境**: ローカルマシン (Node.js)
 *   **接続先バックエンド**: **Firebase Emulator Suite (Local)**
