@@ -1,7 +1,7 @@
 # DevContainer 再ビルド手順 + Android 開発ワークフロー
 
 > **作成日**: 2026-03-20
-> **対象 ADR**: ADR-003 (react-native-track-player 移行)
+> **対象 ADR**: ADR-001, ADR-003
 
 ---
 
@@ -13,8 +13,13 @@
 
 | ファイル | 変更内容 |
 |----------|----------|
-| `.devcontainer/Dockerfile` | JDK 21 + Android SDK (cmdline-tools, platform-tools, build-tools 35.0.0, platforms android-35) を追加 |
+| `.devcontainer/Dockerfile` | `--platform=linux/amd64` + JDK 21 + Android SDK (cmdline-tools, platform-tools, build-tools 35+36, platforms android-35+36, NDK 27.1.12297006) |
 | `.devcontainer/devcontainer.json` | `containerEnv` に `ANDROID_HOME` 追加、ポート 8081 (Metro) 追加、Java feature 削除 |
+
+## 前提条件
+
+- **Docker Desktop**: 「Use Rosetta for x86_64/amd64 emulation on Apple Silicon」が**有効**であること
+  - Settings → General → Use Rosetta for x86_64/amd64 emulation on Apple Silicon
 
 ---
 
@@ -26,7 +31,7 @@ VS Code のコマンドパレット (`Ctrl+Shift+P`) で:
 Dev Containers: Rebuild Container
 ```
 
-> **注意**: Android SDK のダウンロードが含まれるため、初回ビルドには時間がかかります (10〜15 分程度)。
+> **注意**: `--platform=linux/amd64` により Rosetta 経由で実行されるため、初回ビルドには時間がかかります (15〜25 分程度)。
 
 ### ビルド完了後の確認
 
@@ -35,6 +40,7 @@ Dev Containers: Rebuild Container
 ```bash
 echo $ANDROID_HOME   # → /opt/android-sdk
 java -version         # → openjdk 21.x
+uname -m              # → x86_64 (Rosetta 経由)
 sdkmanager --list_installed
 ```
 
@@ -46,7 +52,7 @@ DevContainer 内に USB デバイスは見えないため、APK ビルドとア�
 
 ```
 ┌─────────────────────────────────┐     ┌───────────────────────────┐
-│ DevContainer                    │     │ ホスト PC (Mac)            │
+│ DevContainer (x86_64/Rosetta)   │     │ ホスト PC (Mac)            │
 │                                 │     │                           │
 │  npm run android:prebuild       │     │                           │
 │  npm run android:build          │──→  │  adb install app.apk      │
@@ -63,7 +69,7 @@ cd frontend
 
 # ネイティブプロジェクト生成 (Continuous Native Generation)
 npm run android:prebuild
-# = npx expo prebuild --platform android
+# expo prebuild + ファイル権限の自動修正を含む
 ```
 
 ### 2.2 APK ビルド (コンテナ内)
@@ -71,12 +77,15 @@ npm run android:prebuild
 ```bash
 cd frontend
 
-# Debug APK をビルド
+# Debug APK をビルド (arm64-v8a のみ、--no-daemon)
 npm run android:build
-# = cd android && ./gradlew assembleDebug
+# = cd android && ./gradlew assembleDebug --no-daemon -PreactNativeArchitectures=arm64-v8a
 
 # 出力先: android/app/build/outputs/apk/debug/app-debug.apk
 ```
+
+> **重要**: Rosetta + Docker overlayFS の互換性問題により `--no-daemon` が必要です。
+> Gradle daemon を使うとファイル権限の競合でクラッシュする場合があります。
 
 ### 2.3 実機にインストール (ホスト PC)
 
@@ -97,6 +106,30 @@ adb install <path-to-workspace>/frontend/android/app/build/outputs/apk/debug/app
 cd frontend
 npm run start
 # Metro が :8081 で起動 (devcontainer.json でポート転送済み)
+```
+
+## トラブルシューティング
+
+### `packageDebugResources` で AccessDeniedException
+
+Rosetta + Docker overlayFS の問題で、aapt2/expo prebuild がファイルを書き込み専用 (mode 200) で作成する場合があります。
+
+```bash
+# 手動修正:
+find android -type f ! -perm -u+r -exec chmod u+r {} +
+```
+
+### Gradle daemon がクラッシュする
+
+`--no-daemon` フラグが npm script に含まれていますが、直接 gradlew を呼ぶ場合は明示的に指定してください。
+
+### `expo prebuild --clean` で ENOTEMPTY
+
+前回のビルド成果物が残っている場合:
+
+```bash
+rm -rf android
+npm run android:prebuild
 ```
 
 アプリを実機で起動すると、ポート転送経由で Metro に自動接続されます。

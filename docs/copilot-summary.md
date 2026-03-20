@@ -1,6 +1,6 @@
 # Copilot サマリー — BBCast
 
-> **最終更新**: 2026-07-17 (Phase 1 — react-native-track-player 移行)
+> **最終更新**: 2026-03-20 (Phase 1 — Android ビルド環境確立)
 
 ---
 
@@ -123,6 +123,17 @@ BBCast/
 | 共有定数 (PROGRAM_IDS, BBC_CONFIG, COLLECTIONS, PAGINATION) | ✅ 実装済み |
 | npm workspaces によるバックエンド・フロントエンドでの共有 | ✅ 実装済み |
 
+### DevContainer / Android ビルド環境
+
+| 機能 | 状態 |
+|------|------|
+| DevContainer `--platform=linux/amd64` (Rosetta 経由) | ✅ 設定済み |
+| Android SDK: build-tools 35+36, platforms 35+36, NDK 27.1.12297006 | ✅ Dockerfile |
+| JDK 21 (Dockerfile 内で apt-get install) | ✅ 設定済み |
+| react-native-track-player Kotlin 2.1.20 パッチ (patch-package) | ✅ 自動適用 |
+| ビルドスクリプト: `--no-daemon` + 単一アーキテクチャ (Rosetta 対応) | ✅ 設定済み |
+| prebuild 後の自動パーミッション修正 (Rosetta + overlayFS 対策) | ✅ npm script 統合 |
+
 ### インフラ・CI/CD
 
 | 機能 | 状態 |
@@ -147,6 +158,7 @@ BBCast/
 | ~~CI/CD パイプライン未構築~~ | 1 | ✅ 解決済み — ci.yml + cd-backend.yml |
 | Anonymous Auth → Google SSO 移行 | 1-2 | 🔄 未着手 (設計上は任意) |
 | ~~React 19 + RN 0.81 JSX 型互換性 (TS2607/TS2786)~~ | — | ✅ 解決済み — @types/react 19.2.14 に更新 |
+| ~~Rosetta + overlayFS ファイル権限問題~~ | — | ✅ 解決済み — prebuild 後 chmod + `--no-daemon` |
 | npm workspaces ルートスクリプト伝搬問題 | — | ⚠️ CI は直接コマンドで回避済み |
 | フロントエンドテスト環境未構築 | 2 | 🔄 未着手 |
 
