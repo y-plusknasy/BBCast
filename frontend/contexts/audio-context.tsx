@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { Audio } from 'expo-av';
+import React, { createContext, useContext, useCallback } from 'react';
+import TrackPlayer, { usePlaybackState, useActiveTrack, State } from 'react-native-track-player';
 
 // 音声トラック情報
 export interface Track {
@@ -22,74 +22,45 @@ interface AudioContextValue {
 const AudioContext = createContext<AudioContextValue | null>(null);
 
 export function AudioProvider({ children }: { children: React.ReactNode }) {
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const playbackState = usePlaybackState();
+  const activeTrack = useActiveTrack();
 
-  const cleanup = useCallback(async () => {
-    if (soundRef.current) {
-      try {
-        await soundRef.current.unloadAsync();
-      } catch {
-        // 既にアンロード済みの場合は無視
+  const isPlaying = playbackState.state === State.Playing;
+  const isLoading =
+    playbackState.state === State.Loading ||
+    playbackState.state === State.Buffering;
+
+  const currentTrack: Track | null = activeTrack
+    ? {
+        id: String(activeTrack.id ?? ''),
+        url: activeTrack.url,
+        title: activeTrack.title ?? '',
+        artist: activeTrack.artist ?? '',
       }
-      soundRef.current = null;
-    }
-  }, []);
+    : null;
 
   const playTrack = useCallback(async (track: Track) => {
-    setIsLoading(true);
-    try {
-      await cleanup();
-
-      await Audio.setAudioModeAsync({
-        staysActiveInBackground: true,
-        playsInSilentModeIOS: true,
-      });
-
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: track.url },
-        { shouldPlay: true },
-        (status) => {
-          if (status.isLoaded) {
-            setIsPlaying(status.isPlaying);
-            if (status.didJustFinish) {
-              setIsPlaying(false);
-            }
-          }
-        },
-      );
-
-      soundRef.current = sound;
-      setCurrentTrack(track);
-      setIsPlaying(true);
-    } catch (error) {
-      console.error('音声再生エラー:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [cleanup]);
+    await TrackPlayer.reset();
+    await TrackPlayer.add({
+      id: track.id,
+      url: track.url,
+      title: track.title,
+      artist: track.artist,
+    });
+    await TrackPlayer.play();
+  }, []);
 
   const pause = useCallback(async () => {
-    if (soundRef.current) {
-      await soundRef.current.pauseAsync();
-      setIsPlaying(false);
-    }
+    await TrackPlayer.pause();
   }, []);
 
   const resume = useCallback(async () => {
-    if (soundRef.current) {
-      await soundRef.current.playAsync();
-      setIsPlaying(true);
-    }
+    await TrackPlayer.play();
   }, []);
 
   const stop = useCallback(async () => {
-    await cleanup();
-    setCurrentTrack(null);
-    setIsPlaying(false);
-  }, [cleanup]);
+    await TrackPlayer.reset();
+  }, []);
 
   return (
     <AudioContext.Provider value={{ currentTrack, isPlaying, isLoading, playTrack, pause, resume, stop }}>

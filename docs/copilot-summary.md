@@ -1,6 +1,6 @@
 # Copilot サマリー — BBCast
 
-> **最終更新**: 2026-07-17 (Phase 1 実装完了時)
+> **最終更新**: 2026-07-17 (Phase 1 — react-native-track-player 移行)
 
 ---
 
@@ -55,9 +55,12 @@ BBCast/
 │   │           ├── transcript.tsx     # スクリプト表示
 │   │           ├── vocabulary.tsx     # 語彙リスト
 │   │           └── quiz.tsx           # 4択クイズ
-│   ├── services/firestore.ts          # Firestore データアクセス (Zod バリデーション)
+│   ├── services/
+│   │   ├── firestore.ts               # Firestore データアクセス (Zod バリデーション)
+│   │   ├── playback-service.ts        # TrackPlayer バックグラウンド再生ハンドラー
+│   │   └── setup-service.ts           # TrackPlayer 初期化
 │   ├── contexts/
-│   │   ├── audio-context.tsx          # 音声再生 (expo-av)
+│   │   ├── audio-context.tsx          # 音声再生 (react-native-track-player)
 │   │   └── episode-context.tsx        # エピソードデータ共有
 │   ├── components/
 │   │   ├── audio-player-bar.tsx       # 永続ミニプレイヤー
@@ -72,7 +75,8 @@ BBCast/
 │   ├── database/detail-design.md      # データベース詳細設計 v2
 │   ├── adr/                           # Architecture Decision Records
 │   │   ├── ADR-001-java-in-devcontainer.md  (Accepted: Java 維持)
-│   │   └── ADR-002-turborepo.md             (Accepted: npm workspaces)
+│   │   ├── ADR-002-turborepo.md             (Accepted: npm workspaces)
+│   │   └── ADR-003-audio-library.md         (Accepted: react-native-track-player)
 │   ├── owner-tasks/
 │   │   └── setup-cd-secret.md         # CD 用 Firebase サービスアカウント設定手順
 │   ├── requirements/s00/              # 要件定義
@@ -105,7 +109,7 @@ BBCast/
 | スクリプト表示画面 (ScriptLine[] 対応) | ✅ 実装済み |
 | 語彙リスト画面 (折りたたみ定義) | ✅ 実装済み |
 | 4択クイズ画面 (スコア表示・リトライ) | ✅ 実装済み |
-| 音声再生 (expo-av + AudioContext) | ✅ 実装済み |
+| 音声再生 (react-native-track-player + AudioContext) | ✅ 実装済み |
 | 永続ミニプレイヤー (AudioPlayerBar) | ✅ 実装済み |
 | Firestore サービス層 (Zod バリデーション) | ✅ 実装済み |
 | Firebase 本番接続 | ✅ 実装済み |
@@ -142,7 +146,7 @@ BBCast/
 | ~~定数管理が散在~~ | 1 | ✅ 解決済み — @bbcast/shared/constants |
 | ~~CI/CD パイプライン未構築~~ | 1 | ✅ 解決済み — ci.yml + cd-backend.yml |
 | Anonymous Auth → Google SSO 移行 | 1-2 | 🔄 未着手 (設計上は任意) |
-| React 19 + RN 0.81 JSX 型互換性 (TS2607/TS2786) | — | ⚠️ ビルド時警告のみ、実行時影響なし |
+| ~~React 19 + RN 0.81 JSX 型互換性 (TS2607/TS2786)~~ | — | ✅ 解決済み — @types/react 19.2.14 に更新 |
 | npm workspaces ルートスクリプト伝搬問題 | — | ⚠️ CI は直接コマンドで回避済み |
 | フロントエンドテスト環境未構築 | 2 | 🔄 未着手 |
 
@@ -169,6 +173,7 @@ BBCast/
 |-----|---------|-----------|--------|
 | ADR-001 | DevContainer の Java 21 feature | ✅ Accepted | Java 維持。ローカル APK ビルドの選択肢を残す |
 | ADR-002 | Turborepo vs npm workspaces | ✅ Accepted | npm workspaces を採用。Turborepo は不採用 |
+| ADR-003 | 音声ライブラリ選定 | ✅ Accepted | Phase 1 で react-native-track-player に移行。Expo Go 離脱・ローカル Development Build |
 
 ---
 
@@ -184,7 +189,7 @@ Node.js 22 / TypeScript 5.9.x / Cloud Functions v2 / axios + cheerio / firebase-
 
 ### フロントエンド
 
-React Native 0.81.x + Expo SDK 54 / React 19.1.x / TypeScript 5.9.x / expo-router 6.x / expo-av (音声再生) / Firebase JS SDK 12.x / Zod
+React Native 0.81.x + Expo SDK 54 / React 19.1.x / TypeScript 5.9.x / expo-router 6.x / react-native-track-player 4.x (音声再生) / Firebase JS SDK 12.x / Zod
 
 ### 認証
 
@@ -209,8 +214,12 @@ GitHub Actions — CI (develop push/PR) + CD (main push → Functions デプロ�
 - **ナビゲーション**: tabs テンプレートを削除し、Stack ナビゲーションに変更
 - **画面構成**: 番組一覧 → エピソード一覧 → エピソード詳細 (メニュー / スクリプト / 語彙 / クイズ)
 - **データ取得**: `services/firestore.ts` で Firestore 直接参照 + Zod バリデーション
-- **音声再生**: `expo-av` ベースの `AudioContext` + 永続 `AudioPlayerBar`
+- **音声再生**: `react-native-track-player` ベースの `AudioContext` + 永続 `AudioPlayerBar`
+  - `services/playback-service.ts`: バックグラウンド再生イベントハンドラー
+  - `services/setup-service.ts`: TrackPlayer 初期化
+  - `_layout.tsx` でモジュールスコープ登録 + useEffect 初期化
 - **コンテキスト**: `AudioProvider` (ルート), `EpisodeProvider` (エピソード詳細)
+- **ビルド**: Expo Go 不使用。`expo prebuild` → `expo run:android` で Development Build (ADR-003)
 
 ### 9.3 バックエンド変更
 
@@ -234,3 +243,4 @@ GitHub Actions — CI (develop push/PR) + CD (main push → Functions デプロ�
 | 2026-03-19 | ADR-001 Accepted (Java 維持)、ADR-002 Accepted (npm workspaces 採用, Turborepo 不採用)。アナリティクス設計を episodeProgress 内訳方式に変更。 |
 | 2026-03-19 | フロントエンド実装コード消失を記録。Phase 1 にフロントエンド再実装タスクを追加。ドキュメント全体を再作成。 |
 | 2026-07-17 | **Phase 1 実装完了**: npm workspaces + @bbcast/shared, フロントエンド全画面再実装 (Stack ナビ, 番組一覧, エピソード一覧/詳細, スクリプト, 語彙, クイズ, 音声再生), CI/CD パイプライン, Firestore セキュリティルール更新, import-data.ts 削除, バックエンド共有パッケージ統合。 |
+| 2026-07-17 | **音声ライブラリ移行**: ADR-003 承認。expo-av → react-native-track-player 4.x に移行。PlaybackService / SetupService 作成。DevContainer に Android SDK 追加 (Dockerfile 更新)。app.json に android.package 追加。Expo Go 離脱・ローカル Development Build 方針に転換。 |
