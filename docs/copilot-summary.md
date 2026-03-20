@@ -244,3 +244,4 @@ GitHub Actions — CI (develop push/PR) + CD (main push → Functions デプロ�
 | 2026-03-19 | フロントエンド実装コード消失を記録。Phase 1 にフロントエンド再実装タスクを追加。ドキュメント全体を再作成。 |
 | 2026-07-17 | **Phase 1 実装完了**: npm workspaces + @bbcast/shared, フロントエンド全画面再実装 (Stack ナビ, 番組一覧, エピソード一覧/詳細, スクリプト, 語彙, クイズ, 音声再生), CI/CD パイプライン, Firestore セキュリティルール更新, import-data.ts 削除, バックエンド共有パッケージ統合。 |
 | 2026-07-17 | **音声ライブラリ移行**: ADR-003 承認。expo-av → react-native-track-player 4.x に移行。PlaybackService / SetupService 作成。DevContainer に Android SDK 追加 (Dockerfile 更新)。app.json に android.package 追加。Expo Go 離脱・ローカル Development Build 方針に転換。 |
+| 2026-03-20 | **DevContainer 修正**: Java feature → Dockerfile 内 `apt-get install openjdk-21-jdk-headless` に変更 (sdkmanager が Java を必要とするためビルド順序の問題を解消)。ADR-001 に実装変更を追記。.gitignore に docs/requirements/ を追加。 |

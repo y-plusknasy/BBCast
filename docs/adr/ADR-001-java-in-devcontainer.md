@@ -45,7 +45,7 @@
 
 ## 決定
 
-**✅ Option B: Java feature を維持する**
+**✅ Option B: Java feature を維持する** → **補足 (2026-03-20): Dockerfile 内での直接インストールに変更**
 
 ### 決定理由 (オーナー回答 2026-03-19)
 
@@ -54,8 +54,15 @@
 - ホストマシン (Mac) には adb のみインストール済み。Java 等の開発ツールはホストにインストールしたくないため DevContainer で管理する
 - ADR-002 で Turborepo は不採用となったため、Option C は該当しない
 
+### 実装変更 (2026-03-20)
+
+DevContainer の feature (`ghcr.io/devcontainers/features/java:1`) での Java インストールでは、Dockerfile のビルド時に Java が利用できず、Android SDK の `sdkmanager` が失敗するビルドエラーが発生した。Feature は Dockerfile ビルド**後**に適用されるため、Dockerfile 内で `sdkmanager` を実行する前に Java が存在しない。
+
+**対応**: Java (OpenJDK 21) を Dockerfile 内で直接 `apt-get install` し、devcontainer.json の Java feature を削除した。Java を DevContainer に含めるという ADR-001 の決定方針は維持。
+
 ### 影響
 
-- `.devcontainer/devcontainer.json` の `ghcr.io/devcontainers/features/java:1` (JDK 21) は**そのまま維持**
+- `.devcontainer/Dockerfile` で `openjdk-21-jdk-headless` を直接インストール
+- `.devcontainer/devcontainer.json` から `ghcr.io/devcontainers/features/java:1` を削除
 - DevContainer イメージサイズは現状維持（Java 含む）
 - メモリリーク問題は既知の制約として [docs/troubleshooting.md](../troubleshooting.md) に記録する

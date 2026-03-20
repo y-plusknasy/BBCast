@@ -4,12 +4,7 @@
     "dockerfile": "Dockerfile"
   },
   "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers/features/java:1": {
-      "version": "21",
-      "installGradle": false,
-      "installMaven": false
-    }
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
   "containerEnv": {
     "ANDROID_HOME": "/opt/android-sdk"

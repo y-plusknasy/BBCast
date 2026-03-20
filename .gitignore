@@ -86,3 +86,6 @@ data/images/
 *.mp3
 *.mp4
 *.wav
+
+# Docs
+docs/requirements/
