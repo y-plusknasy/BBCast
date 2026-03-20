@@ -1,6 +1,6 @@
-# DevContainer 再ビルド手順 — Android SDK 追加
+# DevContainer 再ビルド手順 + Android 開発ワークフロー
 
-> **作成日**: 2026-07-17
+> **作成日**: 2026-03-20
 > **対象 ADR**: ADR-003 (react-native-track-player 移行)
 
 ---
@@ -13,14 +13,12 @@
 
 | ファイル | 変更内容 |
 |----------|----------|
-| `.devcontainer/Dockerfile` | Android SDK (cmdline-tools, platform-tools, build-tools 35.0.0, platforms android-35) を追加 |
-| `.devcontainer/devcontainer.json` | `containerEnv` に `ANDROID_HOME` 追加、ポート 8081 (Metro) 追加 |
+| `.devcontainer/Dockerfile` | JDK 21 + Android SDK (cmdline-tools, platform-tools, build-tools 35.0.0, platforms android-35) を追加 |
+| `.devcontainer/devcontainer.json` | `containerEnv` に `ANDROID_HOME` 追加、ポート 8081 (Metro) 追加、Java feature 削除 |
 
 ---
 
-## 手順
-
-### 1. コンテナ再ビルド
+## 1. コンテナ再ビルド
 
 VS Code のコマンドパレット (`Ctrl+Shift+P`) で:
 
@@ -30,50 +28,111 @@ Dev Containers: Rebuild Container
 
 > **注意**: Android SDK のダウンロードが含まれるため、初回ビルドには時間がかかります (10〜15 分程度)。
 
-### 2. ビルド完了後の確認
+### ビルド完了後の確認
 
 コンテナ内のターミナルで以下を確認:
 
 ```bash
-# Android SDK が認識されていること
-echo $ANDROID_HOME
-# → /opt/android-sdk
-
-# sdkmanager が使えること
+echo $ANDROID_HOME   # → /opt/android-sdk
+java -version         # → openjdk 21.x
 sdkmanager --list_installed
-
-# Java が使えること (Gradle ビルドに必要)
-java -version
-# → openjdk 21.x
 ```
 
-### 3. フロントエンドの Development Build
+---
+
+## 2. Android 開発ワークフロー (案 A: ビルドはコンテナ、インストールはホスト)
+
+DevContainer 内に USB デバイスは見えないため、APK ビルドとアプリ実行を分離する。
+
+```
+┌─────────────────────────────────┐     ┌───────────────────────────┐
+│ DevContainer                    │     │ ホスト PC (Mac)            │
+│                                 │     │                           │
+│  npm run android:prebuild       │     │                           │
+│  npm run android:build          │──→  │  adb install app.apk      │
+│  npm run start                  │ ←── │  アプリが Metro に接続     │
+│             (Metro :8081)       │     │       (ポート転送済み)     │
+└─────────────────────────────────┘     └───────────────────────────┘
+```
+
+### 2.1 初回セットアップ (一度だけ)
+
+```bash
+# コンテナ内
+cd frontend
+
+# ネイティブプロジェクト生成 (Continuous Native Generation)
+npm run android:prebuild
+# = npx expo prebuild --platform android
+```
+
+### 2.2 APK ビルド (コンテナ内)
 
 ```bash
 cd frontend
 
-# ネイティブプロジェクト生成 (Continuous Native Generation)
-npx expo prebuild --platform android
+# Debug APK をビルド
+npm run android:build
+# = cd android && ./gradlew assembleDebug
 
-# Android ビルド (USB 接続した実機にインストール)
-npx expo run:android
+# 出力先: android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-> **注意**: エミュレータは DevContainer 内では利用できません。USB 接続した Android 実機が必要です。
-> 実機の USB デバッグを有効にし、ホスト PC 経由でコンテナにパススルーしてください。
+### 2.3 実機にインストール (ホスト PC)
+
+```bash
+# ホスト PC のターミナル (Mac) で実行
+# ※ ホストに adb がインストール済みであること
+
+# DevContainer のワークスペースパスは環境に応じて読み替え
+adb install <path-to-workspace>/frontend/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+> **Tip**: VS Code Remote の場合、ワークスペースフォルダはホスト側にもマウントされているため、
+> ホストのターミナルから直接 APK ファイルにアクセスできます。
+
+### 2.4 Metro 開発サーバー起動 (コンテナ内)
+
+```bash
+cd frontend
+npm run start
+# Metro が :8081 で起動 (devcontainer.json でポート転送済み)
+```
+
+アプリを実機で起動すると、ポート転送経由で Metro に自動接続されます。
+
+### 2.5 日常の開発サイクル
+
+| 操作 | 場所 | コマンド |
+|------|------|----------|
+| JS/TS コード変更 | コンテナ | — (Metro のホットリロードで即反映) |
+| ネイティブ依存追加 | コンテナ | `npm install <pkg>` → `npm run android:prebuild` → `npm run android:build` |
+| APK 再インストール | ホスト | `adb install -r <apk>` |
+| Metro 起動 | コンテナ | `npm run start` |
+
+> **ポイント**: JS/TS の変更だけなら再ビルド不要。Metro のホットリロードで即座に反映されます。
+> ネイティブモジュールの追加・変更があった場合のみ APK の再ビルド + 再インストールが必要です。
 
 ---
 
-## トラブルシューティング
+## 3. npm scripts 一覧
+
+| スクリプト | 説明 |
+|-----------|------|
+| `npm run android:prebuild` | `expo prebuild --platform android` (android/ 生成) |
+| `npm run android:build` | `./gradlew assembleDebug` (Debug APK ビルド) |
+| `npm run android:build-release` | `./gradlew assembleRelease` (Release APK ビルド) |
+| `npm run start` | Metro 開発サーバー起動 (:8081) |
+
+---
+
+## 4. トラブルシューティング
 
 ### `sdkmanager: command not found`
 
-コンテナの PATH に `$ANDROID_HOME/cmdline-tools/latest/bin` が含まれていない。
-`devcontainer.json` の `containerEnv` に `ANDROID_HOME` が設定されているか確認。
+`$ANDROID_HOME` が設定されているか確認: `echo $ANDROID_HOME`
 
 ### Gradle ビルドで NDK エラー
-
-一部のネイティブモジュールが NDK を要求する場合:
 
 ```bash
 sdkmanager "ndk;27.1.12349862"
@@ -82,25 +141,12 @@ sdkmanager "ndk;27.1.12349862"
 ### `expo prebuild` でエラー
 
 ```bash
-# クリーンに再生成
 npx expo prebuild --clean --platform android
 ```
 
-### USB デバイスがコンテナから見えない
+### Metro に接続できない
 
-DevContainer に USB デバイスをパススルーする必要があります。
-`devcontainer.json` に以下を追加:
-
-```json
-"runArgs": ["--device=/dev/bus/usb"]
-```
-
-または、ホスト PC 側で `adb` を起動し、コンテナからネットワーク経由で接続:
-
-```bash
-# ホスト PC 側
-adb tcpip 5555
-
-# コンテナ側
-adb connect host.docker.internal:5555
-```
+1. `devcontainer.json` でポート `8081` が転送されているか確認
+2. Metro が起動しているか確認: `npm run start`
+3. 実機が同じネットワーク上にあるか確認
+4. アプリの開発メニューで Metro のホスト/ポートを手動設定
