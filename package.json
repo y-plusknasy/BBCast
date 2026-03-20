@@ -8,9 +8,13 @@
     "frontend"
   ],
   "scripts": {
+    "postinstall": "npx patch-package",
     "build:shared": "cd packages/shared && npm run build",
     "build:backend": "cd backend && npm run build",
     "lint:frontend": "cd frontend && npx eslint .",
     "test": "npm test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "patch-package": "^8.0.0"
   }
 }

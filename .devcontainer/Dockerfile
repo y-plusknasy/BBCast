@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/devcontainers/typescript-node:22
+# Android NDK は Linux ARM64 ホスト未サポートのため amd64 を指定 (Apple Silicon では Rosetta 経由で実行)
+FROM --platform=linux/amd64 mcr.microsoft.com/devcontainers/typescript-node:22
 
 # Install Google Cloud SDK
 RUN export DEBIAN_FRONTEND=noninteractive \

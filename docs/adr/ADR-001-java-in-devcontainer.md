@@ -56,13 +56,17 @@
 
 ### 実装変更 (2026-03-20)
 
-DevContainer の feature (`ghcr.io/devcontainers/features/java:1`) での Java インストールでは、Dockerfile のビルド時に Java が利用できず、Android SDK の `sdkmanager` が失敗するビルドエラーが発生した。Feature は Dockerfile ビルド**後**に適用されるため、Dockerfile 内で `sdkmanager` を実行する前に Java が存在しない。
+1. DevContainer の feature (`ghcr.io/devcontainers/features/java:1`) での Java インストールでは、Dockerfile のビルド時に Java が利用できず、Android SDK の `sdkmanager` が失敗するビルドエラーが発生した。Feature は Dockerfile ビルド**後**に適用されるため、Dockerfile 内で `sdkmanager` を実行する前に Java が存在しない。
+   - **対応**: Java (OpenJDK 21) を Dockerfile 内で直接 `apt-get install` し、devcontainer.json の Java feature を削除した。
 
-**対応**: Java (OpenJDK 21) を Dockerfile 内で直接 `apt-get install` し、devcontainer.json の Java feature を削除した。Java を DevContainer に含めるという ADR-001 の決定方針は維持。
+2. Android NDK は Linux ARM64 ホストをサポートしていない (ツールチェーンが `linux-x86_64` のみ)。Apple Silicon Mac でコンテナを ARM (aarch64) で実行すると、NDK の clang/cmake が全て x86_64 バイナリのため `rosetta error: failed to open elf` でビルド不可能。
+   - **対応**: Dockerfile に `FROM --platform=linux/amd64` を追加し、コンテナ全体を x86_64 モードで実行 (Apple Silicon では Rosetta 経由)。
 
 ### 影響
 
+- `.devcontainer/Dockerfile` で `--platform=linux/amd64` を指定 (Rosetta 必須)
 - `.devcontainer/Dockerfile` で `openjdk-21-jdk-headless` を直接インストール
 - `.devcontainer/devcontainer.json` から `ghcr.io/devcontainers/features/java:1` を削除
 - DevContainer イメージサイズは現状維持（Java 含む）
+- Rosetta 翻訳によるオーバーヘッドあり (ビルド時間 体感 20〜30% 増加)
 - メモリリーク問題は既知の制約として [docs/troubleshooting.md](../troubleshooting.md) に記録する
