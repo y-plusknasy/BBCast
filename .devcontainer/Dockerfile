@@ -34,5 +34,8 @@ RUN mkdir -p $ANDROID_HOME/cmdline-tools \
     && sdkmanager --install \
        "platform-tools" \
        "build-tools;35.0.0" \
+       "build-tools;36.0.0" \
        "platforms;android-35" \
-    && sdkmanager --list_installed
+       "platforms;android-36" \
+       "ndk;27.1.12297006" \
+    && chmod -R a+rwX $ANDROID_HOME
