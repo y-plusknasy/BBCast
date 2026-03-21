@@ -22,10 +22,10 @@ React Native + Expo SDK 54 によるモバイルアプリ。BBC Learning English
 | ルーティング | expo-router | 6.x |
 | 言語 | TypeScript | 5.9.x |
 | DB クライアント | Firebase JS SDK | 12.x |
-| 音声再生 | react-native-track-player | v5 alpha (Phase 1 導入) |
+| 音声再生 | react-native-track-player | v4.1.2 + patch-package (Phase 1 導入) |
 | 状態管理 | React Context | — |
 | バリデーション | Zod | Phase 1 導入 |
-| 認証 | Firebase Auth | Anonymous → Google SSO (Phase 1) |
+| 認証 | Firebase Auth | Anonymous Auth (Google SSO は将来フェーズ) |
 
 ### Phase 2〜4 追加予定
 

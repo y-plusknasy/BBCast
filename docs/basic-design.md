@@ -137,8 +137,8 @@ Mobile App ──── Google SSO 認証 ──── Firebase Auth
 | ルーター | expo-router |
 | ナビゲーション | @react-navigation/drawer + @react-navigation/native |
 | 画面スワイプ | **react-native-pager-view** (新規導入) |
-| 音声再生 | react-native-track-player ^5.0.0-alpha0 |
-| 認証 | **react-native-credentials-manager** (新規導入) |
+| 音声再生 | react-native-track-player ^4.1.2 (patch-package でKotlin 2.1.20互換パッチ適用) |
+| 認証 | Firebase Auth (現状: Anonymous Auth。Google SSO は将来フェーズで導入予定) |
 | バリデーション | **Zod** (新規導入) |
 | Firebase SDK | firebase |
 | React | 19.x |
@@ -148,7 +148,7 @@ Mobile App ──── Google SSO 認証 ──── Firebase Auth
 | 項目 | 内容 |
 |------|------|
 | データベース | Firestore (Native mode, asia-northeast1) |
-| 認証 | **Firebase Auth ─ Google SSO** (Anonymous Auth から変更) |
+| 認証 | Firebase Auth — Anonymous Auth (将来 Google SSO に移行予定) |
 | Functions | Cloud Functions 2nd gen (asia-northeast1) |
 | スケジューラ | Cloud Scheduler (毎日 10:00 JST) |
 | エミュレーター | Auth:9099, Firestore:8080, UI:4000 |
@@ -167,25 +167,25 @@ Mobile App ──── Google SSO 認証 ──── Firebase Auth
 
 ## 4. 認証設計
 
-### 4.1 認証方式 (変更)
+### 4.1 認証方式
 
-| 項目 | 旧 | 新 |
+| 項目 | 現状 (Phase 1) | 将来計画 |
 |------|-----|-----|
-| 方式 | Firebase Anonymous Auth | **Firebase Auth + Google SSO** |
-| ライブラリ | firebase/auth `signInAnonymously` | **react-native-credentials-manager** |
+| 方式 | Firebase Anonymous Auth | Firebase Auth + Google SSO |
+| ライブラリ | firebase/auth `signInAnonymously` | react-native-credentials-manager (将来導入) |
 | 将来拡張 | — | Apple ID SSO (iOS テスト環境確保後) |
 
-### 4.2 認証フロー
+### 4.2 認証フロー (現状: Anonymous Auth)
 
 ```
 アプリ起動
   │
-  ├─ 未認証 → Google SSO ログイン画面
-  │              ├─ react-native-credentials-manager
-  │              └─ Firebase Auth (signInWithCredential)
+  ├─ 未認証 → signInAnonymously() (自動)
   │
   └─ 認証済み → メイン画面へ
 ```
+
+> **Note**: Google SSO への移行は将来フェーズで実施予定。設計上は `request.auth != null` でルールを統一しているため、認証方式の切り替えは後方互換。
 
 ### 4.3 Firestore セキュリティルール (更新)
 

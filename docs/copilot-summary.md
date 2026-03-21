@@ -1,6 +1,6 @@
 # Copilot サマリー — BBCast
 
-> **最終更新**: 2026-03-20 (Phase 1 — Android ビルド環境確立)
+> **最終更新**: 2026-03-21 (Phase 1 — Android ビルド環境確立・セクション閉め)
 
 ---
 
@@ -78,7 +78,8 @@ BBCast/
 │   │   ├── ADR-002-turborepo.md             (Accepted: npm workspaces)
 │   │   └── ADR-003-audio-library.md         (Accepted: react-native-track-player)
 │   ├── owner-tasks/
-│   │   └── setup-cd-secret.md         # CD 用 Firebase サービスアカウント設定手順
+│   │   ├── setup-cd-secret.md         # CD 用 Firebase サービスアカウント設定手順
+│   │   └── rebuild-devcontainer.md    # DevContainer 再ビルド + Android 開発ワークフロー
 │   ├── requirements/s00/              # 要件定義
 │   └── archive/                       # 旧設計ドキュメント
 ├── firebase.json                      # Firebase 設定
