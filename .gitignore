@@ -88,4 +88,5 @@ data/images/
 *.wav
 
 # Docs
+docs/owner-tasks/
 docs/requirements/
