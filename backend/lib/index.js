@@ -1,65 +1,40 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.manualScraper = exports.scheduledScraper = void 0;
-const functions = __importStar(require("firebase-functions/v1"));
+const scheduler_1 = require("firebase-functions/v2/scheduler");
+const https_1 = require("firebase-functions/v2/https");
 const config_1 = require("./config");
 const repository_1 = require("./database/repository");
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
 const repository = new repository_1.Repository();
-exports.scheduledScraper = functions.pubsub
-    .schedule("every 24 hours")
-    .timeZone("Asia/Tokyo")
-    .onRun(async (context) => {
+exports.scheduledScraper = (0, scheduler_1.onSchedule)({
+    schedule: "0 10 * * *", // 毎日 10:00 JST
+    timeZone: "Asia/Tokyo",
+    region: "asia-northeast1", // 東京リージョンを指定
+}, async (event) => {
     console.log("Starting scheduled scraper...");
     await runScraper();
     console.log("Scheduled scraper finished.");
 });
 // 手動実行用のHTTP関数
-exports.manualScraper = functions.https.onRequest(async (request, response) => {
+exports.manualScraper = (0, https_1.onRequest)({
+    region: "asia-northeast1", // 東京リージョンを指定
+}, async (request, response) => {
     try {
-        await runScraper();
-        response.send("Scraping completed successfully.");
+        const force = request.query.force === 'true';
+        const episodesParam = request.query.episodes;
+        const maxEpisodes = typeof episodesParam === 'string' ? parseInt(episodesParam, 10) : 1;
+        console.log(`Manual scraper triggered. Force: ${force}, MaxEpisodes: ${maxEpisodes}`);
+        await runScraper(force, isNaN(maxEpisodes) ? 1 : maxEpisodes);
+        response.send(`Scraping completed successfully. (Force: ${force}, MaxEpisodes: ${maxEpisodes})`);
     }
     catch (error) {
         console.error("Scraping failed:", error);
         response.status(500).send("Scraping failed.");
     }
 });
-async function runScraper() {
+async function runScraper(force = false, maxEpisodes = 1) {
     for (const programConfig of config_1.config.programs) {
         console.log(`Processing program: ${programConfig.title} (${programConfig.id})`);
         // プログラム情報をDBに保存（更新）
@@ -75,34 +50,47 @@ async function runScraper() {
             console.log(`No episodes found for ${programConfig.id}`);
             continue;
         }
-        // 最新のエピソード（リストの先頭）を取得
-        const latestEpisodeSummary = episodes[0];
-        console.log(`Latest episode on web: ${latestEpisodeSummary.title} (${latestEpisodeSummary.url})`);
-        // 2. DB上の最新エピソードと比較
-        const lastSavedEpisode = await repository.getLastEpisode(programConfig.id);
-        if (lastSavedEpisode) {
-            console.log(`Latest episode in DB: ${lastSavedEpisode.title}`);
-            // URLで比較（タイトルは変更される可能性があるため）
-            if (lastSavedEpisode.url === latestEpisodeSummary.url) {
-                console.log("No new episodes found. Skipping.");
-                continue;
+        // 処理対象のエピソードを決定
+        const targetEpisodes = episodes.slice(0, maxEpisodes);
+        console.log(`Processing ${targetEpisodes.length} episodes...`);
+        for (const episodeSummary of targetEpisodes) {
+            console.log(`Checking episode: ${episodeSummary.title} (${episodeSummary.url})`);
+            // 2. DB上の最新エピソードと比較 (force=trueの場合はスキップ)
+            if (!force) {
+                // 個別のエピソードが既に存在するかチェックするロジックが必要だが、
+                // 簡易的に「最新のエピソードが一致したらそれ以降は処理しない」というロジックの場合:
+                // ここでは maxEpisodes > 1 のケースも考慮し、
+                // 「force=false かつ maxEpisodes=1 (通常実行)」の時だけ最新チェックを行うのが安全。
+                // あるいは、各エピソードごとにDB存在チェックを行うのが確実。
+                // 今回は要件に合わせて「最新チェック」のロジックを少し変更し、
+                // 「force=falseなら、DBに存在しない場合のみ保存」という形にするのが適切。
+                // ただし、repository.getLastEpisode は「最新の1件」しか取らないため、
+                // 過去のエピソードを遡ってチェックするには不十分。
+                // 既存のロジック（最新1件チェック）を維持しつつ、forceフラグで無効化する形にします。
+                // maxEpisodes > 1 の場合、2件目以降もチェックする必要があります。
+                // 簡易実装: force=false の場合、最新エピソードが一致したらそのプログラムの処理を終了する（既存動作）
+                // ただし、maxEpisodesを指定して過去分を取りたい場合は force=true を推奨する運用とするか、
+                // またはここで個別に存在チェックを行うか。
+                // ここでは「force=trueなら無条件で取得・上書き」「force=falseなら最新チェック」とします。
+                if (maxEpisodes === 1) {
+                    const lastSavedEpisode = await repository.getLastEpisode(programConfig.id);
+                    if (lastSavedEpisode && lastSavedEpisode.url === episodeSummary.url) {
+                        console.log("No new episodes found (latest matches). Skipping.");
+                        // 1件だけの処理ならここでプログラム自体の処理を終了
+                        break;
+                    }
+                }
             }
-        }
-        else {
-            console.log("No episodes in DB. Fetching latest.");
-        }
-        // 3. 新しいエピソードの詳細をスクレイピングして保存
-        // ここでは最新の1件だけを取得するロジックにしていますが、
-        // 必要に応じて「DBにないものを全て取得」するループに変更可能です。
-        // 今回は「最新チェック -> 投稿があれば取得」という要件に従い、最新1件を処理します。
-        try {
-            console.log(`Scraping detail: ${latestEpisodeSummary.url}`);
-            const detail = await scraper.scrapeEpisode(latestEpisodeSummary.url);
-            await repository.saveEpisode(programConfig.id, detail);
-            console.log(`Successfully saved new episode: ${detail.title}`);
-        }
-        catch (error) {
-            console.error(`Failed to scrape episode ${latestEpisodeSummary.url}:`, error);
+            // 3. エピソードの詳細をスクレイピングして保存
+            try {
+                console.log(`Scraping detail: ${episodeSummary.url}`);
+                const detail = await scraper.scrapeEpisode(episodeSummary.url);
+                await repository.saveEpisode(programConfig.id, detail);
+                console.log(`Successfully saved episode: ${detail.title}`);
+            }
+            catch (error) {
+                console.error(`Failed to scrape episode ${episodeSummary.url}:`, error);
+            }
         }
     }
 }

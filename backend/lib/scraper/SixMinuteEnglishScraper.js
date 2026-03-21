@@ -15,10 +15,24 @@ class SixMinuteEnglishScraper extends IndexPageScraper_1.IndexPageScraper {
      */
     async scrapeEpisode(url) {
         const $ = await this.fetchAndParse(url);
-        // タイトル取得（h1がページタイトルになっていることが多い）
-        const title = this.cleanText($('h1').text());
-        // 公開日などのメタデータ取得（必要に応じて実装）
-        const date = this.cleanText($('.details h3').first().text());
+        // タイトル取得
+        // <div class="widget widget-heading ..."><h3>Title</h3></div>
+        const titles = $('.widget.widget-heading h3')
+            .map((_, el) => this.cleanText($(el).text()))
+            .get()
+            .filter(text => text !== '6 Minute English');
+        const title = titles.length > 0 ? titles[0] : '';
+        // 公開日取得
+        // <div class="widget widget-bbcle-featuresubheader">...<h3><b>Episode ...</b> / 25 Dec 2025</h3>...</div>
+        let dateStr = this.cleanText($('.widget.widget-bbcle-featuresubheader h3').text());
+        // "Episode 251225 / 25 Dec 2025" のような形式から日付部分を抽出
+        if (dateStr.includes('/')) {
+            dateStr = dateStr.split('/')[1].trim();
+        }
+        const parsedDate = new Date(dateStr);
+        const date = isNaN(parsedDate.getTime()) ? undefined : parsedDate;
+        // Description取得
+        const description = $('meta[name="description"]').attr('content') || '';
         const mp3Url = this.extractMp3Url($);
         const quizUrl = this.extractQuizUrl($);
         const vocabulary = this.extractVocabulary($);
@@ -30,6 +44,7 @@ class SixMinuteEnglishScraper extends IndexPageScraper_1.IndexPageScraper {
         }
         return {
             title,
+            description,
             date,
             url,
             mp3Url,
@@ -70,29 +85,39 @@ class SixMinuteEnglishScraper extends IndexPageScraper_1.IndexPageScraper {
         const vocabItems = [];
         const vocabHeader = $('h3:contains("Vocabulary")');
         if (vocabHeader.length > 0) {
-            // Vocabularyヘッダーの直後のpタグを取得
-            const vocabContainer = vocabHeader.next('p');
-            const htmlContent = vocabContainer.html() || '';
-            // <br>タグで分割して解析
-            // 例: <strong>Word</strong><br>Definition<br>&nbsp;<br><strong>Word2</strong>...
-            const parts = htmlContent.split('<br>').map(s => s.trim()).filter(s => s !== '' && s !== '&nbsp;');
-            let currentWord = '';
-            parts.forEach(part => {
-                // HTMLタグを除去したテキスト
-                const text = part.replace(/<[^>]*>/g, '').trim();
-                // <strong>タグを含んでいた場合は「単語」とみなす
-                if (part.includes('<strong>') || part.includes('<b>')) {
-                    currentWord = text;
+            // Vocabularyヘッダーの次の要素から探索開始
+            let currentElement = vocabHeader.next();
+            // 次のh3タグやセクションの終わりまでループ
+            while (currentElement.length > 0 && !currentElement.is('h3')) {
+                // pタグのみを対象とする
+                if (currentElement.is('p')) {
+                    const strongTag = currentElement.find('strong, b');
+                    // <strong>タグがある場合のみ処理 (これが単語)
+                    if (strongTag.length > 0) {
+                        const word = strongTag.text().trim();
+                        // <br>タグで分割して定義を取得する試み
+                        // 構造: <p><strong>Word</strong><br>Definition</p>
+                        // strongタグを除去した残りのテキストを取得
+                        const clone = currentElement.clone();
+                        clone.find('strong, b').remove();
+                        const definition = clone.text().trim();
+                        if (word && definition) {
+                            vocabItems.push({ word, definition });
+                        }
+                    }
+                    else {
+                        // <strong>がないpタグ（例: 画像リンクなど）が来たら、Vocabularyセクション終了とみなすか判断
+                        // ここでは、明らかにVocabularyの形式でないものが来たらループを抜けるのが安全
+                        // ただし、空行(&nbsp;)などはスキップしたい
+                        const text = currentElement.text().trim();
+                        if (text && !text.match(/^(&nbsp;|\s)*$/)) {
+                            // 何か意味のあるテキストやコンテンツがあるが、単語定義の形式ではない -> 終了
+                            break;
+                        }
+                    }
                 }
-                else if (currentWord && text) {
-                    // 単語がセットされた状態で、次のテキストが来たら「定義」とみなす
-                    vocabItems.push({
-                        word: currentWord,
-                        definition: text
-                    });
-                    currentWord = ''; // リセット
-                }
-            });
+                currentElement = currentElement.next();
+            }
         }
         return vocabItems;
     }

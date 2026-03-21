@@ -86,3 +86,7 @@ data/images/
 *.mp3
 *.mp4
 *.wav
+
+# Docs
+docs/owner-tasks/
+docs/requirements/

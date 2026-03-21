@@ -1,4 +1,5 @@
 import * as dotenv from 'dotenv';
+import { BBC_CONFIG } from '@bbcast/shared';
 import { ProgramConfig } from './scraper/types';
 import { SixMinuteEnglishScraper } from './scraper/SixMinuteEnglishScraper';
 import { TheEnglishWeSpeakScraper } from './scraper/TheEnglishWeSpeakScraper';
@@ -8,7 +9,7 @@ dotenv.config();
 
 export const config = {
   bbc: {
-    baseUrl: process.env.BBC_BASE_URL || 'https://www.bbc.co.uk',
+    baseUrl: process.env.BBC_BASE_URL || BBC_CONFIG.BASE_URL,
   },
   programs: [
     {

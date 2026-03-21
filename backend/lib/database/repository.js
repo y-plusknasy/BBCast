@@ -35,18 +35,20 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Repository = void 0;
 const admin = __importStar(require("firebase-admin"));
+const shared_1 = require("@bbcast/shared");
 // Initialize Firebase Admin
 if (!admin.apps.length) {
     admin.initializeApp();
 }
 const db = admin.firestore();
+db.settings({ ignoreUndefinedProperties: true });
 class Repository {
     /**
      * プログラムの最新エピソードを取得する
      * @param programId プログラムID
      */
     async getLastEpisode(programId) {
-        const snapshot = await db.collection('episodes')
+        const snapshot = await db.collection(shared_1.COLLECTIONS.EPISODES)
             .where('programId', '==', programId)
             .orderBy('date', 'desc') // 日付順で降順
             .limit(1)
@@ -55,7 +57,10 @@ class Repository {
             return null;
         }
         const data = snapshot.docs[0].data();
-        // FirestoreのデータをEpisodeDetail型に変換（必要に応じて）
+        // TimestampをDateに変換
+        if (data.date && typeof data.date.toDate === 'function') {
+            data.date = data.date.toDate();
+        }
         return data;
     }
     /**
@@ -68,7 +73,7 @@ class Repository {
         // 例: /features/6-minute-english/ep-231228 -> 6-minute-english-ep-231228
         const slug = episode.url.split('/').pop() || Date.now().toString();
         const docId = `${programId}-${slug}`;
-        const docRef = db.collection('episodes').doc(docId);
+        const docRef = db.collection(shared_1.COLLECTIONS.EPISODES).doc(docId);
         await docRef.set(Object.assign(Object.assign({}, episode), { programId, updatedAt: admin.firestore.FieldValue.serverTimestamp() }), { merge: true });
         console.log(`Saved episode: ${docId}`);
     }
@@ -76,7 +81,7 @@ class Repository {
      * プログラム情報を保存/更新する
      */
     async saveProgram(program) {
-        await db.collection('programs').doc(program.id).set({
+        await db.collection(shared_1.COLLECTIONS.PROGRAMS).doc(program.id).set({
             title: program.title,
             urlPath: program.urlPath,
             baseUrl: 'https://www.bbc.co.uk', // Configから取得すべきだが一旦固定

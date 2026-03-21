@@ -4,14 +4,12 @@
     "dockerfile": "Dockerfile"
   },
   "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers/features/java:1": {
-      "version": "21",
-      "installGradle": false,
-      "installMaven": false
-    }
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "forwardPorts": [4000, 8080, 9099],
+  "containerEnv": {
+    "ANDROID_HOME": "/opt/android-sdk"
+  },
+  "forwardPorts": [4000, 8080, 8081, 9099],
   "postCreateCommand": "npm install -g firebase-tools && cd backend && npm install && cd ../frontend && npm install",
   "customizations": {
     "vscode": {

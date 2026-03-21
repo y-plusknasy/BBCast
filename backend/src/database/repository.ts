@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import { COLLECTIONS } from '@bbcast/shared';
 import { EpisodeDetail, ProgramConfig } from '../scraper/types';
 
 // Initialize Firebase Admin
@@ -15,7 +16,7 @@ export class Repository {
    * @param programId プログラムID
    */
   async getLastEpisode(programId: string): Promise<EpisodeDetail | null> {
-    const snapshot = await db.collection('episodes')
+    const snapshot = await db.collection(COLLECTIONS.EPISODES)
       .where('programId', '==', programId)
       .orderBy('date', 'desc') // 日付順で降順
       .limit(1)
@@ -46,7 +47,7 @@ export class Repository {
     const slug = episode.url.split('/').pop() || Date.now().toString();
     const docId = `${programId}-${slug}`;
 
-    const docRef = db.collection('episodes').doc(docId);
+    const docRef = db.collection(COLLECTIONS.EPISODES).doc(docId);
     
     await docRef.set({
       ...episode,
@@ -61,7 +62,7 @@ export class Repository {
    * プログラム情報を保存/更新する
    */
   async saveProgram(program: ProgramConfig): Promise<void> {
-    await db.collection('programs').doc(program.id).set({
+    await db.collection(COLLECTIONS.PROGRAMS).doc(program.id).set({
       title: program.title,
       urlPath: program.urlPath,
       baseUrl: 'https://www.bbc.co.uk', // Configから取得すべきだが一旦固定
